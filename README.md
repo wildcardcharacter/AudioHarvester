@@ -25,9 +25,9 @@ Built with **Python** and **PyQt6**.
 
 ![Main Window](screenshots/main-window.png)
 
-### Playlist Detection
+### Legal notice
 
-![Playlist Detection](screenshots/playlist-detection.png)
+![Playlist Detection](screenshots/egal-dialog.png
 
 ### About Dialog
 
