@@ -27,7 +27,7 @@ Built with **Python** and **PyQt6**.
 
 ### Legal notice
 
-![Legal notice](screenshots/egal-dialog.png
+![Legal notice](screenshots/legal-dialog.png
 
 ### About Dialog
 
