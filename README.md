@@ -88,3 +88,7 @@ https://wildcardcharacter.github.io
 
 Support development:
 https://buymeacoffee.com/wildcardcharacter
+
+## License
+
+MIT License
