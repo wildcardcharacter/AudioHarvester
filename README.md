@@ -137,7 +137,7 @@ Current release: **v0.9**
 
 ## Author
 
-Markus Reichelt
+Markus 
 
 Website:
 https://wildcardcharacter.github.io
