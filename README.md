@@ -58,10 +58,26 @@ pip install PyQt6
 Install yt-dlp:
 
 ```bash
+pipx install yt-dlp
+```
+
+or
+
+```bash
 pip install -U yt-dlp
 ```
 
 Install ffmpeg using your distribution's package manager.
+
+### Notes
+
+AudioHarvester currently expects yt-dlp to be available at:
+
+```bash
+~/.local/bin/yt-dlp
+```
+
+This is the default location when yt-dlp is installed via pipx.
 
 ## Run
 
