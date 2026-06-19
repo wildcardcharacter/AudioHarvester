@@ -25,9 +25,9 @@ Built with **Python** and **PyQt6**.
 
 ![Main Window](screenshots/main-window.png)
 
-### Legal notice
+### Legal Notice
 
-![Legal notice](screenshots/legal-dialog.png)
+![Legal Notice](screenshots/legal-dialog.png)
 
 ### About Dialog
 
@@ -41,6 +41,46 @@ Built with **Python** and **PyQt6**.
 * ffmpeg
 
 ## Installation
+
+### Option 1: Install the DEB package
+
+Download the latest `.deb` package from the GitHub Releases page.
+
+Install it with:
+
+```bash
+sudo apt install ./audioharvester_0.9_all.deb
+```
+
+After installation, AudioHarvester can be started from the application menu or with:
+
+```bash
+audioharvester
+```
+
+### Uninstall
+
+To remove AudioHarvester:
+
+```bash
+sudo apt remove audioharvester
+```
+
+To remove the package including system-wide configuration files:
+
+```bash
+sudo apt purge audioharvester
+```
+
+User settings are stored in:
+
+```text
+~/.config/audioharvester/
+```
+
+and can be removed manually if desired.
+
+### Option 2: Run from source
 
 Clone the repository:
 
