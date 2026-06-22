@@ -18,6 +18,7 @@ Built with **Python** and **PyQt6**.
 * Custom output directory
 * Saved settings
 * XFCE menu integration
+* Installable DEB package
 
 ## Screenshots
 
@@ -49,7 +50,7 @@ Download the latest `.deb` package from the GitHub Releases page.
 Install it with:
 
 ```bash
-sudo apt install ./audioharvester_0.9_all.deb
+sudo apt install ./audioharvester_0.9.5_all.deb
 ```
 
 After installation, AudioHarvester can be started from the application menu or with:
@@ -60,13 +61,13 @@ audioharvester
 
 ### Uninstall
 
-To remove AudioHarvester:
+Remove AudioHarvester:
 
 ```bash
 sudo apt remove audioharvester
 ```
 
-To remove the package including system-wide configuration files:
+Remove AudioHarvester including package configuration:
 
 ```bash
 sudo apt purge audioharvester
@@ -101,7 +102,7 @@ Install yt-dlp:
 pipx install yt-dlp
 ```
 
-or
+or:
 
 ```bash
 pip install -U yt-dlp
@@ -109,22 +110,24 @@ pip install -U yt-dlp
 
 Install ffmpeg using your distribution's package manager.
 
-### Notes
-
-AudioHarvester currently expects yt-dlp to be available at:
-
-```bash
-~/.local/bin/yt-dlp
-```
-
-This is the default location when yt-dlp is installed via pipx.
-
 ## Run
 
 ```bash
 python3 src/main.py
 ```
 
+## Notes
+
+AudioHarvester automatically searches for yt-dlp in common installation locations, including:
+
+```text
+~/.local/bin/yt-dlp
+```
+## Known Limitations
+
+- The graphical user interface is currently available in German only.
+- English language support is planned for a future release.
+  
 ## Legal Notice
 
 AudioHarvester is intended for downloading content that you are legally allowed to access and store.
@@ -133,11 +136,11 @@ Users are responsible for complying with local laws, copyright regulations, and 
 
 ## Version
 
-Current release: **v0.9**
+Current release: **v0.9.5**
 
 ## Author
 
-Markus 
+Markus Reichelt
 
 Website:
 https://wildcardcharacter.github.io
