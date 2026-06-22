@@ -2,14 +2,16 @@
 import re
 import sys
 import subprocess
+import shutil
 from pathlib import Path
+from version import VERSION
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 ICON_FILE = PROJECT_DIR / "icons" / "audioharvester.png"
 
 # Drittanbieter
-from PyQt6.QtGui import QIcon, QPixmap
-from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer
+from PyQt6.QtGui import QIcon, QPixmap, QDesktopServices
+from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer, QUrl
 from PyQt6.QtWidgets import (
     QGroupBox,
     QListWidget,
@@ -51,8 +53,18 @@ class DownloadWorker(QThread):
         download_dir = Path(self.output_dir)
         download_dir.mkdir(parents=True, exist_ok=True)
 
+        yt_dlp = Path.home() / ".local" / "bin" / "yt-dlp"
+
+        if not yt_dlp.exists():
+            yt_dlp = shutil.which("yt-dlp")
+
+        if not yt_dlp:
+            self.log_message.emit("❌ yt-dlp wurde nicht gefunden.")
+            self.finished_download.emit(1)
+            return
+
         cmd = [
-            "/home/markus/.local/bin/yt-dlp",
+            str(yt_dlp),
             "-x",
             "--newline",
             "-o",
@@ -141,7 +153,7 @@ class AudioHarvester(QWidget):
         )
         self.download_cancelled = False
 
-        self.setWindowTitle("AudioHarvester v0.9")
+        self.setWindowTitle(f"AudioHarvester v{VERSION}")
         self.resize(650, 450)
 
         layout = QVBoxLayout()
@@ -483,76 +495,85 @@ class AudioHarvester(QWidget):
         )
 
     def show_info(self):
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Über AudioHarvester")
-        dialog.resize(420, 360)
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Über AudioHarvester")
+            dialog.resize(420, 420)
 
-        layout = QVBoxLayout()
+            layout = QVBoxLayout()
 
-        icon_label = QLabel()
-        pixmap = QPixmap(str(ICON_FILE))
+            icon_label = QLabel()
+            pixmap = QPixmap(str(ICON_FILE))
 
-        if not pixmap.isNull():
+            if not pixmap.isNull():
                 icon_label.setPixmap(pixmap.scaledToWidth(96))
                 icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(icon_label)
 
-                title_label = QLabel("<h2>AudioHarvester</h2>")
-                title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                layout.addWidget(title_label)
+            title_label = QLabel("<h2>AudioHarvester</h2>")
+            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(title_label)
 
-                text_label = QLabel(
-                    "Version 0.9<br><br>"
+            text_label = QLabel(
+                f"Version {VERSION}<br><br>"
 
-                    "Audio downloader for Linux based on yt-dlp and ffmpeg.<br>"
-                    "Built with Python and PyQt6.<br><br>"
+                "Audio-Downloader für Linux auf Basis von yt-dlp und ffmpeg.<br>"
+                "Erstellt mit Python und PyQt6.<br><br>"
 
-                    "<b>Features:</b><br>"
-                    "MP3, Opus and M4A support<br>"
-                    "Audio quality selection<br>"
-                    "Embedded cover artwork<br>"
-                    "Metadata support<br>"
-                    "Playlist downloads with single-track mode<br>"
-                    "Download cancellation<br>"
-                    "Download history<br>"
-                    "History management<br>"
-                    "Custom output directory<br>"
-                    "Saved settings<br>"
-                    "XFCE menu integration<br><br>"
+                "<b>Funktionen:</b><br>"
+                "Unterstützung für MP3, Opus und M4A<br>"
+                "Auswahl der Audioqualität<br>"
+                "Coverbilder einbetten<br>"
+                "Metadaten-Unterstützung<br>"
+                "Playlist-Downloads mit Einzeltrack-Modus<br>"
+                "Download abbrechen<br>"
+                "Download-Historie<br>"
+                "Historie verwalten<br>"
+                "Frei wählbarer Zielordner<br>"
+                "Einstellungen speichern<br>"
+                "XFCE-Menüintegration<br><br>"
 
-                    "<b>Author:</b> Markus<br><br>"
+                "<b>Autor:</b> Markus<br><br>"
 
-                    '🌐 <a href="https://wildcardcharacter.github.io">'
-                    "Website"
-                    "</a><br>"
+                '🌐 <a href="https://wildcardcharacter.github.io">'
+                "Website"
+                "</a><br>"
 
-                    '📧 <a href="mailto:wildcardcharacter@icloud.com">'
-                    "E-Mail"
-                    "</a><br><br>"
+                '📧 <a href="mailto:wildcardcharacter@icloud.com">'
+                "E-Mail"
+                "</a><br><br>"
 
-                    "─────────────────<br><br>"
+                "─────────────────<br><br>"
 
-                    "If you like AudioHarvester and want to support development:<br><br>"
+                "Wenn dir AudioHarvester gefällt und du die Entwicklung "
+                "unterstützen möchtest:"
+            )
 
-                    '☕ <a href="https://buymeacoffee.com/wildcardcharacter">'
-                    "Support AudioHarvester"
-                    "</a>"
-)
+            text_label.setOpenExternalLinks(True)
+            text_label.setTextFormat(Qt.TextFormat.RichText)
+            text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            text_label.setWordWrap(True)
 
-        text_label.setOpenExternalLinks(True)
-        text_label.setTextFormat(Qt.TextFormat.RichText)
-        text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        text_label.setWordWrap(True)
-        layout.addWidget(text_label)
+            layout.addWidget(text_label)
 
-        layout.addSpacing(20)
+            layout.addSpacing(15)
 
-        close_button = QPushButton("Schließen")
-        close_button.clicked.connect(dialog.close)
-        layout.addWidget(close_button)
+            support_button = QPushButton("☕ AudioHarvester unterstützen")
+            support_button.clicked.connect(
+                lambda: QDesktopServices.openUrl(
+                    QUrl("https://buymeacoffee.com/wildcardcharacter")
+                )
+            )
 
-        dialog.setLayout(layout)
-        dialog.exec()
+            layout.addWidget(support_button)
+
+            layout.addSpacing(10)
+
+            close_button = QPushButton("Schließen")
+            close_button.clicked.connect(dialog.close)
+            layout.addWidget(close_button)
+
+            dialog.setLayout(layout)
+            dialog.exec()
 
     def show_legal(self):
         dialog = QDialog(self)
