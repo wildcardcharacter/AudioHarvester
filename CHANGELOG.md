@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.9.6
+
+### User Interface
+
+* Added integrated changelog viewer
+* Added Markdown rendering for changelog display
+* Added tooltips for common actions
+* Improved button labels and visual consistency
+* Added icons to frequently used buttons
+* Improved spacing and layout throughout the application
+
+### Code Improvements
+
+* Moved About dialog into a dedicated module (`about.py`)
+* Added dedicated changelog module (`changelog.py`)
+* Improved code organization and maintainability
+* Removed unused imports and cleaned up code
+
+### Documentation
+
+* Updated README
+* Updated project documentation
+* Added Markdown dependency documentation
+
+---
+
 ## v0.9.5
 
 ### Packaging
