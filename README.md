@@ -19,6 +19,9 @@ Built with **Python** and **PyQt6**.
 * Saved settings
 * XFCE menu integration
 * Installable DEB package
+* Automatic yt-dlp detection
+* Integrated changelog viewer
+* Tooltips and GUI improvements
 
 ## Screenshots
 
@@ -38,19 +41,20 @@ Built with **Python** and **PyQt6**.
 
 * Python 3.10+
 * PyQt6
+* Python-Markdown
 * yt-dlp
 * ffmpeg
 
 ## Installation
 
-### Option 1: Install the DEB package
+### Option 1: Install the DEB Package
 
 Download the latest `.deb` package from the GitHub Releases page.
 
 Install it with:
 
 ```bash
-sudo apt install ./audioharvester_0.9.5_all.deb
+sudo apt install ./audioharvester_0.9.6_all.deb
 ```
 
 After installation, AudioHarvester can be started from the application menu or with:
@@ -81,7 +85,7 @@ User settings are stored in:
 
 and can be removed manually if desired.
 
-### Option 2: Run from source
+### Option 2: Run from Source
 
 Clone the repository:
 
@@ -94,6 +98,12 @@ Install dependencies:
 
 ```bash
 pip install PyQt6
+```
+
+Install Markdown support:
+
+```bash
+sudo apt install python3-markdown
 ```
 
 Install yt-dlp:
@@ -116,6 +126,12 @@ Install ffmpeg using your distribution's package manager.
 python3 src/main.py
 ```
 
+## Changelog Viewer
+
+AudioHarvester includes an integrated changelog viewer.
+
+The application reads the project's `CHANGELOG.md` file and renders it using Markdown formatting directly inside the GUI.
+
 ## Notes
 
 AudioHarvester automatically searches for yt-dlp in common installation locations, including:
@@ -123,11 +139,7 @@ AudioHarvester automatically searches for yt-dlp in common installation location
 ```text
 ~/.local/bin/yt-dlp
 ```
-## Known Limitations
 
-- The graphical user interface is currently available in German only.
-- English language support is planned for a future release.
-  
 ## Legal Notice
 
 AudioHarvester is intended for downloading content that you are legally allowed to access and store.
@@ -136,16 +148,18 @@ Users are responsible for complying with local laws, copyright regulations, and 
 
 ## Version
 
-Current release: **v0.9.5**
+Current release: **v0.9.6**
 
 ## Author
 
-Markus Reichelt
+Markus
 
 Website:
+
 https://wildcardcharacter.github.io
 
 Support development:
+
 https://buymeacoffee.com/wildcardcharacter
 
 ## License
