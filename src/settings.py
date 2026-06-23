@@ -12,8 +12,10 @@ DEFAULT_SETTINGS = {
     "format": "MP3",
     "quality": "320 kbps",
     "download_thumbnail": False,
-    "history": []
-}
+    "history": [],
+    "window_width": 650,
+    "window_height": 450,
+    }
 
 
 def load_settings():

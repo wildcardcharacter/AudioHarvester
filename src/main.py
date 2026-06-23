@@ -5,13 +5,15 @@ import subprocess
 import shutil
 from pathlib import Path
 from version import VERSION
+from about import show_info_dialog
+from changelog import show_changelog_dialog
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 ICON_FILE = PROJECT_DIR / "icons" / "audioharvester.png"
 
 # Drittanbieter
-from PyQt6.QtGui import QIcon, QPixmap, QDesktopServices
-from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer, QUrl
+from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt6.QtWidgets import (
     QGroupBox,
     QListWidget,
@@ -153,12 +155,16 @@ class AudioHarvester(QWidget):
         )
         self.download_cancelled = False
 
+        settings = load_settings()
+
         self.setWindowTitle(f"AudioHarvester v{VERSION}")
+
         self.resize(650, 450)
 
         layout = QVBoxLayout()
         download_group = QGroupBox("Download")
         download_layout = QVBoxLayout()
+        download_layout.setSpacing(8)
 
         download_group.setLayout(download_layout)
 
@@ -167,6 +173,7 @@ class AudioHarvester(QWidget):
 
         options_group = QGroupBox("Optionen")
         options_layout = QVBoxLayout()
+        options_layout.setSpacing(8)
 
         options_group.setLayout(options_layout)
 
@@ -174,12 +181,15 @@ class AudioHarvester(QWidget):
 
         folder_group = QGroupBox("Zielordner")
         folder_layout = QVBoxLayout()
+        folder_layout.setSpacing(8)
+
 
         folder_group.setLayout(folder_layout)
         layout.addWidget(folder_group)
 
         actions_group = QGroupBox("Aktionen")
         actions_layout = QVBoxLayout()
+        actions_layout.setSpacing(8)
 
         actions_group.setLayout(actions_layout)
 
@@ -195,6 +205,10 @@ class AudioHarvester(QWidget):
         self.clear_url_button = QPushButton("✖")
         self.clear_url_button.clicked.connect(self.clear_url)
         url_layout.addWidget(self.clear_url_button)
+
+        self.clear_url_button.setToolTip(
+            "Leert das URL-Feld"
+        )
 
         download_layout.addLayout(url_layout)
 
@@ -259,33 +273,66 @@ class AudioHarvester(QWidget):
 
         button_layout = QHBoxLayout()
 
-        self.download_button = QPushButton("Download starten")
+        self.download_button = QPushButton("⬇ Download starten")
         self.download_button.clicked.connect(self.start_download)
         button_layout.addWidget(self.download_button)
 
-        self.cancel_button = QPushButton("Abbrechen")
+        self.download_button.setToolTip(
+            "Startet den Download der eingegebenen URL"
+        )
+
+        self.cancel_button = QPushButton("⏸ Abbrechen")
         self.cancel_button.clicked.connect(self.cancel_download)
         self.cancel_button.setEnabled(False)
 
         button_layout.addWidget(self.cancel_button)
 
+        self.cancel_button.setToolTip(
+            "Bricht den laufenden Download ab"
+        )
+
         self.folder_button = QPushButton("📂 Ordner öffnen")
         self.folder_button.clicked.connect(self.open_download_folder)
         button_layout.addWidget(self.folder_button)
 
-        self.info_button = QPushButton("Info")
-        self.info_button.clicked.connect(self.show_info)
+        self.folder_button.setToolTip(
+            "Öffnet den aktuellen Zielordner"
+        )
+
+        self.info_button = QPushButton("ℹ Info")
+        self.info_button.clicked.connect(
+        lambda: show_info_dialog(self)
+)
         button_layout.addWidget(self.info_button)
 
-        self.legal_button = QPushButton("Rechtliches")
+        self.info_button.setToolTip(
+            "Zeigt Informationen über AudioHarvester"
+        )
+
+        self.changelog_button = QPushButton ("📋 Changelog")
+        self.changelog_button.clicked.connect(
+            lambda: show_changelog_dialog(self)
+        )
+        button_layout.addWidget(self.changelog_button)
+
+        self.changelog_button.setToolTip(
+            "Zeigt die Änderungen der aktuellen Versionen"
+        )
+
+        self.legal_button = QPushButton ("⚖ Rechtliches")
         self.legal_button.clicked.connect(self.show_legal)
         button_layout.addWidget(self.legal_button)
 
         actions_layout.addLayout(button_layout)
 
+        self.legal_button.setToolTip(
+            "Zeigt rechtliche Hinweise"
+        )
+
         history_group = QGroupBox("Letzte Downloads")
         history_layout = QVBoxLayout()
-
+        history_layout.setSpacing(8)
+        
         history_group.setLayout(history_layout)
 
         self.history_list = QListWidget()
@@ -300,6 +347,10 @@ class AudioHarvester(QWidget):
         self.clear_history_button = QPushButton("Historie löschen")
         self.clear_history_button.clicked.connect(self.clear_history)
         history_layout.addWidget(self.clear_history_button)
+
+        self.clear_history_button.setToolTip(
+            "Löscht die Download-Historie"
+        )
 
         layout.addWidget(history_group)
 
@@ -494,93 +545,15 @@ class AudioHarvester(QWidget):
             "Eintrag aus Historie übernommen"
         )
 
-    def show_info(self):
-            dialog = QDialog(self)
-            dialog.setWindowTitle("Über AudioHarvester")
-            dialog.resize(420, 420)
-
-            layout = QVBoxLayout()
-
-            icon_label = QLabel()
-            pixmap = QPixmap(str(ICON_FILE))
-
-            if not pixmap.isNull():
-                icon_label.setPixmap(pixmap.scaledToWidth(96))
-                icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                layout.addWidget(icon_label)
-
-            title_label = QLabel("<h2>AudioHarvester</h2>")
-            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(title_label)
-
-            text_label = QLabel(
-                f"Version {VERSION}<br><br>"
-
-                "Audio-Downloader für Linux auf Basis von yt-dlp und ffmpeg.<br>"
-                "Erstellt mit Python und PyQt6.<br><br>"
-
-                "<b>Funktionen:</b><br>"
-                "Unterstützung für MP3, Opus und M4A<br>"
-                "Auswahl der Audioqualität<br>"
-                "Coverbilder einbetten<br>"
-                "Metadaten-Unterstützung<br>"
-                "Playlist-Downloads mit Einzeltrack-Modus<br>"
-                "Download abbrechen<br>"
-                "Download-Historie<br>"
-                "Historie verwalten<br>"
-                "Frei wählbarer Zielordner<br>"
-                "Einstellungen speichern<br>"
-                "XFCE-Menüintegration<br><br>"
-
-                "<b>Autor:</b> Markus<br><br>"
-
-                '🌐 <a href="https://wildcardcharacter.github.io">'
-                "Website"
-                "</a><br>"
-
-                '📧 <a href="mailto:wildcardcharacter@icloud.com">'
-                "E-Mail"
-                "</a><br><br>"
-
-                "─────────────────<br><br>"
-
-                "Wenn dir AudioHarvester gefällt und du die Entwicklung "
-                "unterstützen möchtest:"
-            )
-
-            text_label.setOpenExternalLinks(True)
-            text_label.setTextFormat(Qt.TextFormat.RichText)
-            text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            text_label.setWordWrap(True)
-
-            layout.addWidget(text_label)
-
-            layout.addSpacing(15)
-
-            support_button = QPushButton("☕ AudioHarvester unterstützen")
-            support_button.clicked.connect(
-                lambda: QDesktopServices.openUrl(
-                    QUrl("https://buymeacoffee.com/wildcardcharacter")
-                )
-            )
-
-            layout.addWidget(support_button)
-
-            layout.addSpacing(10)
-
-            close_button = QPushButton("Schließen")
-            close_button.clicked.connect(dialog.close)
-            layout.addWidget(close_button)
-
-            dialog.setLayout(layout)
-            dialog.exec()
-
     def show_legal(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Rechtlicher Hinweis")
         dialog.resize(600, 450)
 
         layout = QVBoxLayout()
+
+        layout.setSpacing(10)
+        layout.setContentsMargins(12, 12, 12, 12)
 
         title_label = QLabel("<h2>Rechtlicher Hinweis</h2>")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
