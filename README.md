@@ -29,13 +29,13 @@ Built with **Python** and **PyQt6**.
 
 ![Main Window](screenshots/main-window.png)
 
-### Legal Notice
-
-![Legal Notice](screenshots/legal-dialog.png)
-
 ### About Dialog
 
 ![About Dialog](screenshots/about-dialog.png)
+
+### Legal Notice
+
+![Legal Notice](screenshots/legal-dialog.png)
 
 ## Requirements
 
