@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AudioHarvester
+Comment=Audio downloader for Linux
+Exec=audioharvester
+Icon=audioharvester
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=audio;youtube;download;music;

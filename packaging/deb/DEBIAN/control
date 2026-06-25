@@ -1,0 +1,11 @@
+Package: audioharvester
+Version: 0.9
+Section: sound
+Priority: optional
+Architecture: all
+Maintainer: Markus <wildcardcharacter@icloud.com>
+Depends: python3, python3-pyqt6, ffmpeg
+Description: Audio downloader for Linux
+AudioHarvester: is a lightweight desktop application
+for: downloading audio from YouTube using yt-dlp and ffmpeg.
+
