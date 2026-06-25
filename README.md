@@ -1,8 +1,11 @@
-# AudioHarvester
+<p align="center">
+  <img src="icons/audioharvester.png" alt="AudioHarvester Logo" width="150">
+</p>
 
-AudioHarvester is a lightweight Linux desktop application for downloading audio from YouTube using **yt-dlp** and **ffmpeg**.
-
-Built with **Python** and **PyQt6**.
+<h1 align="center">AudioHarvester</h1>
+<p align="center">
+  A lightweight Linux audio downloader powered by yt-dlp and ffmpeg.
+</p>
 
 ## Features
 
