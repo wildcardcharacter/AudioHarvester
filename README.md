@@ -32,6 +32,10 @@
 
 ![Main Window](screenshots/main-window.png)
 
+![Main Window](screenshots/main-window-2.png)
+
+![Main Window](screenshots/main-window-3.png)
+
 ### About Dialog
 
 ![About Dialog](screenshots/about-dialog.png)
