@@ -4,6 +4,8 @@
   <img src="icons/audioharvester.png" width="140" alt="AudioHarvester Logo">
 </p>
 
+<h1 align="center">AudioHarvester</h1>
+
 <p align="center">
   <strong>A modern Linux audio downloader powered by yt-dlp, ffmpeg and PyQt6.</strong>
 </p>
@@ -25,63 +27,76 @@
 
 ---
 
-## About
+## 📸 Preview
 
-AudioHarvester is a modern desktop application for Linux that allows you to download high-quality audio from YouTube using **yt-dlp** and **ffmpeg**.
-
-Built with **Python** and **PyQt6**, it offers an intuitive graphical interface for downloading individual tracks or complete playlists while automatically converting them into your preferred audio format.
-
----
-
-## Features
-
-- 🎵 MP3, Opus and M4A support
-- 🎚 Audio quality selection
-- 🖼 Embedded cover artwork
-- 📝 Automatic metadata support
-- 📃 Playlist downloads
-- 🎧 Download single tracks or complete playlists
-- ⏹ Cancel running downloads
-- 📜 Download history
-- 🗂 History management
-- 📁 Custom output directory
-- ⚙ Saved settings
-- 📖 Integrated changelog viewer
-- ⚖ Integrated legal information
-- 🔍 Automatic yt-dlp detection
-- 📦 Installable DEB package
-- 🖥 XFCE application menu integration
-- 🧩 Modular project architecture
+<p align="center">
+  <img src="screenshots/download-completed.png" width="900" alt="AudioHarvester Preview">
+</p>
 
 ---
 
-## Screenshots
+## ✨ Features
+
+* 🎵 Download audio from YouTube
+* 🎧 MP3, Opus and M4A support
+* 🎚 Audio quality selection
+* 🖼 Embed cover artwork
+* 📝 Automatic metadata support
+* 📃 Download complete playlists
+* 🎯 Download only the selected track from playlists
+* ⏹ Cancel running downloads
+* 📜 Download history
+* 🗂 History management
+* 📁 Custom output directory
+* ⚙ Saved settings
+* 📖 Integrated changelog viewer
+* ⚖ Integrated legal information
+* 🔍 Automatic yt-dlp detection
+* 📦 Installable Debian package
+* 🖥 XFCE application menu integration
+* 🧩 Modular project architecture
+
+---
+
+## 🖼 Screenshots
 
 ### Main Window
 
-![Main Window](screenshots/main-window.png)
+<p align="center">
+  <img src="screenshots/main-window.png" width="900" alt="Main Window">
+</p>
+
+### Playlist Detection
+
+<p align="center">
+  <img src="screenshots/playlist-detection.png" width="520" alt="Playlist Detection">
+</p>
 
 ### About Dialog
 
-![About Dialog](screenshots/about-dialog.png)
+<p align="center">
+  <img src="screenshots/about-dialog.png" width="520" alt="About Dialog">
+</p>
 
-### Legal Dialog
+### Legal Notice
 
-![Legal Dialog](screenshots/legal-dialog.png)
+<p align="center">
+  <img src="screenshots/legal-dialog.png" width="520" alt="Legal Notice">
+</p>
 
 ---
 
-## Installation
+## 📦 Installation
 
-### Install the DEB package
+### Debian Package
 
-Download the latest release from GitHub.
+Download the latest release from the GitHub Releases page.
 
 ```bash
 sudo apt install ./audioharvester_0.9.6_all.deb
 ```
 
-Launch the application:
+Start AudioHarvester:
 
 ```bash
 audioharvester
@@ -89,7 +104,7 @@ audioharvester
 
 ---
 
-## Run from Source
+## 🚀 Run from Source
 
 Clone the repository:
 
@@ -98,7 +113,7 @@ git clone https://github.com/wildcardcharacter/AudioHarvester.git
 cd AudioHarvester
 ```
 
-Install the required Python package:
+Install the required dependencies:
 
 ```bash
 pip install PyQt6 markdown
@@ -119,7 +134,7 @@ yt-dlp --version
 
 Install **ffmpeg** using your distribution's package manager.
 
-Run AudioHarvester:
+Run the application:
 
 ```bash
 python3 src/main.py
@@ -127,63 +142,66 @@ python3 src/main.py
 
 ---
 
-## Requirements
+## ⚙ Requirements
 
-- Linux
-- Python 3.10+
-- PyQt6
-- Python-Markdown
-- yt-dlp
-- ffmpeg
-
----
-
-## Changelog
-
-AudioHarvester includes an integrated Markdown-based changelog viewer.
-
-All changes are documented in:
-
-```
-CHANGELOG.md
-```
+* Linux
+* Python 3.10 or newer
+* PyQt6
+* Python-Markdown
+* yt-dlp
+* ffmpeg
 
 ---
 
-## Roadmap
+## 📖 Changelog
 
-Planned features for future releases:
+All changes are documented in **CHANGELOG.md**.
 
-- 🌍 English user interface
-- 📦 AppImage support
-- 📦 Flatpak package
-- 🚀 Flathub release
-- 🤖 GitHub Actions build workflow
-- 🎨 Additional themes
-- 🔊 More audio formats
+AudioHarvester also includes an integrated Markdown-based changelog viewer.
 
 ---
 
-## License
+## 🗺 Roadmap
+
+Planned features:
+
+* 🌍 English user interface
+* 📦 AppImage package
+* 📦 Flatpak package
+* 🚀 Flathub release
+* 🤖 GitHub Actions build workflow
+* 🎨 Theme improvements
+* 🔊 Additional audio formats
+
+See **TODO.md** for the complete roadmap.
+
+---
+
+## 🤝 Contributing
+
+Bug reports, feature requests and pull requests are always welcome.
+
+If you find a bug or have an idea for a new feature, feel free to open an issue.
+
+---
+
+## 📄 License
 
 This project is licensed under the MIT License.
 
-See the **LICENSE.txt** file for details.
+See **LICENSE.txt** for more information.
 
 ---
 
-## Author
+## 👤 Author
 
 **Markus**
 
-GitHub:
-
-https://github.com/wildcardcharacter
-
-Website:
-
+🌐 Website
 https://wildcardcharacter.github.io
 
-Support the project:
+💻 GitHub
+https://github.com/wildcardcharacter
 
+☕ Support the project
 https://buymeacoffee.com/wildcardcharacter
