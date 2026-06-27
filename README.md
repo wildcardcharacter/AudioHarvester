@@ -30,7 +30,7 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="screenshots/download-completed.png" width="900" alt="AudioHarvester Preview">
+  <img src="screenshots/download-completed.png" width="700" alt="AudioHarvester Preview">
 </p>
 
 ---
@@ -63,7 +63,7 @@
 ### Main Window
 
 <p align="center">
-  <img src="screenshots/main-window.png" width="900" alt="Main Window">
+  <img src="screenshots/main-window.png" width="520" alt="Main Window">
 </p>
 
 ### Playlist Detection
