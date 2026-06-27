@@ -30,7 +30,7 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="screenshots/download-completed.png" width="700" alt="AudioHarvester Preview">
+  <img src="screenshots/download-completed.png" width="600" alt="AudioHarvester Preview">
 </p>
 
 ---
