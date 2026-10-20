@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QPushButton
 )
 
-def show_changelog_dialog(parent=None):
+def show_changelog_dialog(parent=None, language="Deutsch"):
     dialog = QDialog(parent)
     dialog.setWindowTitle("AudioHarvester Changelog")
     dialog.resize(700, 500)
@@ -41,7 +41,7 @@ def show_changelog_dialog(parent=None):
 
     layout.addWidget(changelog_view)
 
-    close_button = QPushButton("Schließen")
+    close_button = QPushButton("Close" if language == "English" else "Schließen")
     close_button.clicked.connect(dialog.close)
     layout.addWidget(close_button)
 

@@ -8,18 +8,26 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 
-def show_legal_dialog(parent=None):
+def show_legal_dialog(parent=None, language="Deutsch"):
+    english = language == "English"
     dialog = QDialog(parent)
-    dialog.setWindowTitle("Rechtlicher Hinweis")
+    dialog.setWindowTitle("Legal notice" if english else "Rechtlicher Hinweis")
     dialog.resize(600, 450)
 
     layout = QVBoxLayout()
 
-    title_label = QLabel("<h2>Rechtlicher Hinweis</h2>")
+    title_label = QLabel("<h2>Legal notice</h2>" if english else "<h2>Rechtlicher Hinweis</h2>")
     title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(title_label)
 
     text_label = QLabel(
+        ("AudioHarvester is a tool for downloading audio content.<br><br>"
+        "<b>Please note:</b><br><br>"
+        "• Downloads should only be made from lawful sources.<br><br>"
+        "• Circumventing technical protection measures is prohibited.<br><br>"
+        "• YouTube's terms of service may prohibit downloads.<br><br>"
+        "• Content may not be shared or used commercially without permission.<br><br>"
+        "<b>Each user is responsible for complying with applicable laws and terms of service.</b>" if english else
         "AudioHarvester ist ein Werkzeug zum Herunterladen von Audioinhalten.<br><br>"
         "<b>Bitte beachten Sie:</b><br><br>"
         "• Privatkopien können für den persönlichen Gebrauch zulässig sein.<br><br>"
@@ -27,7 +35,7 @@ def show_legal_dialog(parent=None):
         "• Das Umgehen technischer Schutzmaßnahmen ist nicht erlaubt.<br><br>"
         "• YouTube-Nutzungsbedingungen können Downloads untersagen.<br><br>"
         "• Inhalte dürfen nicht ohne Erlaubnis verbreitet oder kommerziell genutzt werden.<br><br>"
-        "<b>Jeder Nutzer ist selbst verantwortlich, geltende Gesetze und Nutzungsbedingungen einzuhalten.</b>"
+        "<b>Jeder Nutzer ist selbst verantwortlich, geltende Gesetze und Nutzungsbedingungen einzuhalten.</b>")
     )
 
     text_label.setWordWrap(True)
@@ -35,7 +43,7 @@ def show_legal_dialog(parent=None):
 
     layout.addWidget(text_label)
 
-    close_button = QPushButton("Schließen")
+    close_button = QPushButton("Close" if english else "Schließen")
     close_button.clicked.connect(dialog.close)
 
     layout.addWidget(close_button)

@@ -12,11 +12,12 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 ICON_FILE = PROJECT_DIR / "icons" / "audioharvester.png"
 
 # Drittanbieter
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QActionGroup
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt6.QtWidgets import (
     QGroupBox,
     QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QFileDialog,
     QApplication,
@@ -31,9 +32,15 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QCheckBox,
     QDialog,
+    QScrollArea,
+    QToolButton,
+    QMenu,
   )
 # Eigene Module
 from settings import load_settings, save_settings
+
+QUEUE_URL_ROLE = int(Qt.ItemDataRole.UserRole)
+QUEUE_STATUS_ROLE = QUEUE_URL_ROLE + 1
 
 
 class AudioHarvester(QWidget):
@@ -55,9 +62,39 @@ class AudioHarvester(QWidget):
 
         self.setWindowTitle(f"AudioHarvester v{VERSION}")
 
-        self.resize(650, 450)
+        # Fenstergröße an den Bildschirm anpassen; bei wenig Platz bleibt der
+        # Inhalt über Scrollleisten erreichbar.
+        screen = QApplication.primaryScreen()
+        available = screen.availableGeometry() if screen else None
+        if available:
+            max_width = max(1, available.width() - 40)
+            max_height = max(1, available.height() - 80)
+        else:
+            max_width, max_height = 1200, 900
+        self.setMinimumSize(min(480, max_width), min(360, max_height))
+        width = min(settings.get("window_width", 650), max_width)
+        height = min(settings.get("window_height", 450), max_height)
+        self.resize(max(self.minimumWidth(), width), max(self.minimumHeight(), height))
 
         layout = QVBoxLayout()
+        top_bar = QHBoxLayout()
+        top_bar.addStretch()
+        self.settings_button = QToolButton()
+        self.settings_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        top_bar.addWidget(self.settings_button)
+        self.more_button = QToolButton()
+        self.more_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.more_menu = QMenu(self.more_button)
+        self.changelog_action = self.more_menu.addAction("Changelog")
+        self.changelog_action.triggered.connect(lambda: show_changelog_dialog(self, self.language))
+        self.legal_action = self.more_menu.addAction("Rechtliches")
+        self.legal_action.triggered.connect(lambda: show_legal_dialog(self, self.language))
+        self.info_action = self.more_menu.addAction("Info")
+        self.info_action.triggered.connect(lambda: show_info_dialog(self, self.language))
+        self.more_button.setMenu(self.more_menu)
+        top_bar.addWidget(self.more_button)
+        layout.addLayout(top_bar)
+
         download_group = QGroupBox("Download")
         download_layout = QVBoxLayout()
         download_layout.setSpacing(8)
@@ -66,14 +103,12 @@ class AudioHarvester(QWidget):
 
         layout.addWidget(download_group)
         self.settings = load_settings()
-
-        options_group = QGroupBox("Optionen")
-        options_layout = QVBoxLayout()
-        options_layout.setSpacing(8)
-
-        options_group.setLayout(options_layout)
-
-        layout.addWidget(options_group)
+        self.language = self.settings.get("language", "Deutsch")
+        self.selected_format = self.settings.get("format", "MP3")
+        self.selected_quality = self.settings.get("quality", "320 kbps")
+        self.embed_cover = self.settings.get("download_thumbnail", False)
+        self.current_queue_item = None
+        self.create_settings_menu()
 
         folder_group = QGroupBox("Zielordner")
         folder_layout = QVBoxLayout()
@@ -91,11 +126,12 @@ class AudioHarvester(QWidget):
 
         layout.addWidget(actions_group)
 
-        download_layout.addWidget(QLabel("YouTube URL"))
+        download_layout.addWidget(QLabel("YouTube URL(s) – mehrere Links zeilenweise"))
 
         url_layout = QHBoxLayout()
 
-        self.url_input = QLineEdit()
+        self.url_input = QTextEdit()
+        self.url_input.setMaximumHeight(70)
         url_layout.addWidget(self.url_input)
 
         self.clear_url_button = QPushButton("✖")
@@ -108,48 +144,38 @@ class AudioHarvester(QWidget):
 
         download_layout.addLayout(url_layout)
 
-        download_layout.addWidget(QLabel("Format"))
-        self.format_box = QComboBox()
-        self.format_box.addItems(["MP3", "Opus", "M4A"])
+        queue_buttons = QHBoxLayout()
+        self.add_queue_button = QPushButton("Zur Warteschlange hinzufügen")
+        self.add_queue_button.clicked.connect(self.add_to_queue)
+        queue_buttons.addWidget(self.add_queue_button)
+        self.start_queue_button = QPushButton("Warteschlange starten")
+        self.start_queue_button.clicked.connect(self.start_download)
+        queue_buttons.addWidget(self.start_queue_button)
+        download_layout.addLayout(queue_buttons)
+        self.queue_list = QListWidget()
+        download_layout.addWidget(self.queue_list)
+        queue_controls = QHBoxLayout()
+        self.remove_queue_button = QPushButton("Auswahl entfernen")
+        self.remove_queue_button.clicked.connect(self.remove_queue_item)
+        queue_controls.addWidget(self.remove_queue_button)
+        self.clear_queue_button = QPushButton("Warteschlange leeren")
+        self.clear_queue_button.clicked.connect(self.clear_queue)
+        queue_controls.addWidget(self.clear_queue_button)
+        self.retry_failed_button = QPushButton("Fehlgeschlagene erneut versuchen")
+        self.retry_failed_button.clicked.connect(self.retry_failed_downloads)
+        self.retry_failed_button.setEnabled(False)
+        queue_controls.addWidget(self.retry_failed_button)
+        download_layout.addLayout(queue_controls)
+        template_layout = QHBoxLayout()
+        template_layout.addWidget(QLabel("Dateiname"))
+        self.filename_template = QLineEdit(self.settings.get("filename_template", "%(title)s"))
+        self.filename_template.setToolTip("yt-dlp Vorlage, z. B. %(artist)s - %(title)s")
+        template_layout.addWidget(self.filename_template)
+        download_layout.addLayout(template_layout)
 
-        saved_format = self.settings.get("format", "MP3")
-        index = self.format_box.findText(saved_format)
-
-        if index >= 0:
-            self.format_box.setCurrentIndex(index)
-
-        download_layout.addWidget(self.format_box)
-
-        download_layout.addWidget(QLabel("Qualität"))
-        self.quality_box = QComboBox()
-        self.quality_box.addItems([
-            "128 kbps",
-            "192 kbps",
-            "320 kbps",
-            "Original"])
-        saved_quality = self.settings.get(
-            "quality",
-            "320 kbps")
-        index = self.quality_box.findText(saved_quality)
-
-        if index >= 0:
-            self.quality_box.setCurrentIndex(index)
-
-        download_layout.addWidget(self.quality_box)
-
-        self.thumbnail_checkbox = QCheckBox(
-        "Coverbild einbetten"
-        )
-
-        self.thumbnail_checkbox.setChecked(
-        self.settings.get(
-        "download_thumbnail",
-            False
-            )
-        )
-
-        options_layout.addWidget(self.thumbnail_checkbox)
-
+        self.current_download_label = QLabel("Kein Download aktiv")
+        self.current_download_label.setWordWrap(True)
+        actions_layout.addWidget(self.current_download_label)
         self.progress = QProgressBar()
         self.progress.setValue(0)
         actions_layout.addWidget(self.progress)
@@ -195,38 +221,7 @@ class AudioHarvester(QWidget):
             "Öffnet den aktuellen Zielordner"
         )
 
-        self.info_button = QPushButton("ℹ Info")
-        self.info_button.clicked.connect(
-        lambda: show_info_dialog(self)
-)
-        button_layout.addWidget(self.info_button)
-
-        self.info_button.setToolTip(
-            "Zeigt Informationen über AudioHarvester"
-        )
-
-        self.changelog_button = QPushButton ("📋 Changelog")
-        self.changelog_button.clicked.connect(
-            lambda: show_changelog_dialog(self)
-        )
-        button_layout.addWidget(self.changelog_button)
-
-        self.changelog_button.setToolTip(
-            "Zeigt die Änderungen der aktuellen Versionen"
-        )
-
-        self.legal_button = QPushButton ("⚖ Rechtliches")
-        self.legal_button.clicked.connect(
-            lambda: show_legal_dialog(self)
-        )
-        button_layout.addWidget(self.legal_button)
-
         actions_layout.addLayout(button_layout)
-
-        self.legal_button.setToolTip(
-            "Zeigt rechtliche Hinweise"
-        )
-
         history_group = QGroupBox("Letzte Downloads")
         history_layout = QVBoxLayout()
         history_layout.setSpacing(8)
@@ -254,50 +249,301 @@ class AudioHarvester(QWidget):
 
         self.log = QTextEdit()
         self.log.setReadOnly(True)
+        self.log_toggle = QPushButton()
+        self.log_toggle.setCheckable(True)
+        self.log_toggle.setChecked(False)
+        self.log_toggle.setMinimumHeight(32)
+        self.log_toggle.toggled.connect(self.toggle_log)
+        layout.addWidget(self.log_toggle)
+        self.log.hide()
         layout.addWidget(self.log)
 
-        self.setLayout(layout)
+        content = QWidget()
+        content.setLayout(layout)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(content)
+        window_layout = QVBoxLayout(self)
+        window_layout.setContentsMargins(0, 0, 0, 0)
+        window_layout.addWidget(scroll_area)
+        self.apply_language()
+
+    def tr(self, german, english):
+        return english if self.language == "English" else german
+
+    def queue_status_label(self, status):
+        labels = {
+            "waiting": ("⏳ Wartet", "⏳ Waiting"),
+            "running": ("⬇ Läuft", "⬇ In progress"),
+            "success": ("✅ Erfolgreich", "✅ Complete"),
+            "failed": ("❌ Fehlgeschlagen", "❌ Failed"),
+        }
+        german, english = labels[status]
+        return self.tr(german, english)
+
+    def set_queue_item_status(self, item, status):
+        item.setData(QUEUE_STATUS_ROLE, status)
+        url = item.data(QUEUE_URL_ROLE)
+        item.setText(f"{self.queue_status_label(status)} — {url}")
+        self.retry_failed_button.setEnabled(self.has_failed_downloads())
+
+    def has_failed_downloads(self):
+        return any(
+            self.queue_list.item(index).data(QUEUE_STATUS_ROLE) == "failed"
+            for index in range(self.queue_list.count())
+        )
+
+    def next_waiting_item(self):
+        for index in range(self.queue_list.count()):
+            item = self.queue_list.item(index)
+            if item.data(QUEUE_STATUS_ROLE) == "waiting":
+                return item
+        return None
+
+    def refresh_queue_labels(self):
+        for index in range(self.queue_list.count()):
+            item = self.queue_list.item(index)
+            status = item.data(QUEUE_STATUS_ROLE)
+            if status:
+                self.set_queue_item_status(item, status)
+
+    def toggle_log(self, expanded):
+        self.log.setVisible(expanded)
+        self.log_toggle.setText(
+            self.tr("Protokoll ausblenden ▴", "Hide log ▴") if expanded
+            else self.tr("Protokoll anzeigen ▾", "Show log ▾")
+        )
+
+    def change_language(self, language):
+        self.language = language
+        self.settings["language"] = language
+        save_settings(self.settings)
+        self.apply_language()
+
+    def create_settings_menu(self):
+        self.settings_menu = QMenu(self.settings_button)
+        self.settings_button.setMenu(self.settings_menu)
+
+        self.language_menu = self.settings_menu.addMenu("Sprache")
+        self.language_group = QActionGroup(self)
+        self.language_group.setExclusive(True)
+        self.language_actions = {}
+        for language in ("Deutsch", "English"):
+            action = self.language_menu.addAction(language)
+            action.setCheckable(True)
+            action.setChecked(language == self.language)
+            self.language_group.addAction(action)
+            action.triggered.connect(lambda checked, value=language: self.change_language(value) if checked else None)
+            self.language_actions[language] = action
+
+        self.format_menu = self.settings_menu.addMenu("Format")
+        self.format_group = QActionGroup(self)
+        self.format_group.setExclusive(True)
+        self.format_actions = {}
+        for audio_format in ("MP3", "Opus", "M4A"):
+            action = self.format_menu.addAction(audio_format)
+            action.setCheckable(True)
+            action.setChecked(audio_format == self.selected_format)
+            self.format_group.addAction(action)
+            action.triggered.connect(lambda checked, value=audio_format: self.set_audio_format(value) if checked else None)
+            self.format_actions[audio_format] = action
+
+        self.quality_menu = self.settings_menu.addMenu("Qualität")
+        self.quality_group = QActionGroup(self)
+        self.quality_group.setExclusive(True)
+        self.quality_actions = {}
+        for quality in ("128 kbps", "192 kbps", "320 kbps", "Original"):
+            action = self.quality_menu.addAction(quality)
+            action.setCheckable(True)
+            action.setChecked(quality == self.selected_quality)
+            self.quality_group.addAction(action)
+            action.triggered.connect(lambda checked, value=quality: self.set_audio_quality(value) if checked else None)
+            self.quality_actions[quality] = action
+
+        self.cover_action = self.settings_menu.addAction("Coverbild einbetten")
+        self.cover_action.setCheckable(True)
+        self.cover_action.setChecked(self.embed_cover)
+        self.cover_action.triggered.connect(self.set_cover_embedding)
+        self.update_settings_menu_language()
+
+    def set_audio_format(self, audio_format):
+        self.selected_format = audio_format
+        self.settings["format"] = audio_format
+        save_settings(self.settings)
+
+    def set_audio_quality(self, quality):
+        self.selected_quality = quality
+        self.settings["quality"] = quality
+        save_settings(self.settings)
+
+    def set_cover_embedding(self, enabled):
+        self.embed_cover = enabled
+        self.settings["download_thumbnail"] = enabled
+        save_settings(self.settings)
+
+    def update_settings_menu_language(self):
+        self.settings_button.setText(self.tr("⚙ Einstellungen ▾", "⚙ Settings ▾"))
+        self.language_menu.setTitle(self.tr("Sprache", "Language"))
+        self.format_menu.setTitle(self.tr("Format", "Format"))
+        self.quality_menu.setTitle(self.tr("Qualität", "Quality"))
+        self.cover_action.setText(self.tr("Coverbild einbetten", "Embed cover art"))
+
+    def apply_language(self):
+        translations = {
+            "Optionen": "Options", "Zielordner": "Output folder", "Aktionen": "Actions",
+            "YouTube URL(s) – mehrere Links zeilenweise": "YouTube URL(s) – enter one link per line",
+            "Leert das URL-Feld": "Clear the URL field", "Zur Warteschlange hinzufügen": "Add to queue",
+            "Warteschlange starten": "Start queue", "Auswahl entfernen": "Remove selected",
+            "Warteschlange leeren": "Clear queue", "Dateiname": "Filename template",
+            "Fehlgeschlagene erneut versuchen": "Retry failed downloads",
+            "yt-dlp Vorlage, z. B. %(artist)s - %(title)s": "yt-dlp template, e.g. %(artist)s - %(title)s",
+            "Format": "Format", "Qualität": "Quality", "Coverbild einbetten": "Embed cover art", "Bereit": "Ready",
+            "Zielordner auswählen": "Choose output folder", "⬇ Download starten": "⬇ Start download",
+            "⏸ Abbrechen": "⏸ Cancel", "Bricht den laufenden Download ab": "Cancel the current download",
+            "📂 Ordner öffnen": "📂 Open folder", "ℹ Info": "ℹ About", "⚖ Rechtliches": "⚖ Legal",
+            "Letzte Downloads": "Recent downloads", "Historie löschen": "Clear history",
+            "Löscht die Download-Historie": "Clear download history",
+            "Startet den Download der eingegebenen URL": "Start downloading the queued URLs",
+            "Öffnet den aktuellen Zielordner": "Open the current output folder",
+            "Zeigt Informationen über AudioHarvester": "About AudioHarvester",
+            "Zeigt die Änderungen der aktuellen Versionen": "Show version history",
+            "Zeigt rechtliche Hinweise": "Show legal information",
+            "⚙ Einstellungen": "⚙ Settings",
+            "Optionen": "Options",
+        }
+        for widget in self.findChildren(QWidget):
+            if hasattr(widget, "text") and callable(widget.text):
+                current = widget.text()
+                if current.startswith("Zielordner: ") or current.startswith("Output folder: "):
+                    widget.setText(self.tr("Zielordner: ", "Output folder: ") + self.output_dir)
+                elif current in translations:
+                    widget.setText(translations[current] if self.language == "English" else current)
+                elif current in translations.values():
+                    widget.setText(next(de for de, en in translations.items() if en == current) if self.language == "Deutsch" else current)
+            if hasattr(widget, "toolTip") and callable(widget.toolTip):
+                tip = widget.toolTip()
+                if tip in translations:
+                    widget.setToolTip(translations[tip] if self.language == "English" else tip)
+                elif tip in translations.values():
+                    widget.setToolTip(next(de for de, en in translations.items() if en == tip) if self.language == "Deutsch" else tip)
+        self.url_input.setPlaceholderText(self.tr("Eine URL pro Zeile", "One URL per line"))
+        self.more_button.setText(self.tr("Mehr ▾", "More ▾"))
+        self.changelog_action.setText(self.tr("Changelog", "Changelog"))
+        self.legal_action.setText(self.tr("Rechtliches", "Legal information"))
+        self.info_action.setText(self.tr("Info", "About"))
+        self.update_settings_menu_language()
+        if self.current_queue_item is None:
+            self.current_download_label.setText(self.tr("Kein Download aktiv", "No download active"))
+        else:
+            current_url = self.current_queue_item.data(QUEUE_URL_ROLE)
+            self.current_download_label.setText(self.tr(f"Aktueller Download: {current_url}", f"Current download: {current_url}"))
+        self.refresh_queue_labels()
+        self.toggle_log(self.log_toggle.isChecked())
 
     def save_current_settings(self):
         self.settings["output_dir"] = self.output_dir
-        self.settings["download_thumbnail"] = self.thumbnail_checkbox.isChecked()
-        self.settings["format"] = self.format_box.currentText()
-        self.settings["quality"] = self.quality_box.currentText()
+        self.settings["download_thumbnail"] = self.embed_cover
+        self.settings["format"] = self.selected_format
+        self.settings["quality"] = self.selected_quality
+        self.settings["filename_template"] = self.filename_template.text().strip() or "%(title)s"
         save_settings(self.settings)
 
+    def closeEvent(self, event):
+        self.settings["window_width"] = self.width()
+        self.settings["window_height"] = self.height()
+        save_settings(self.settings)
+        super().closeEvent(event)
+
+    def add_to_queue(self):
+        urls = [line.strip() for line in self.url_input.toPlainText().splitlines() if line.strip()]
+        if not urls:
+            self.log.append(self.tr("Bitte mindestens eine URL eingeben.", "Please enter at least one URL."))
+            return
+        known = {
+            self.queue_list.item(i).data(QUEUE_URL_ROLE)
+            for i in range(self.queue_list.count())
+        }
+        added = 0
+        for url in urls:
+            if url not in known:
+                item = QListWidgetItem()
+                item.setData(QUEUE_URL_ROLE, url)
+                self.queue_list.addItem(item)
+                self.set_queue_item_status(item, "waiting")
+                known.add(url)
+                added += 1
+        self.url_input.clear()
+        self.status_label.setText(self.tr(f"{added} URL(s) zur Warteschlange hinzugefügt", f"Added {added} URL(s) to the queue"))
+
+    def remove_queue_item(self):
+        row = self.queue_list.currentRow()
+        if row >= 0:
+            item = self.queue_list.item(row)
+            is_active = (
+                self.current_queue_item is not None
+                and item.data(QUEUE_URL_ROLE) == self.current_queue_item.data(QUEUE_URL_ROLE)
+            )
+            if not is_active:
+                self.queue_list.takeItem(row)
+                self.retry_failed_button.setEnabled(self.has_failed_downloads())
+
+    def clear_queue(self):
+        if not (hasattr(self, "worker") and self.worker.isRunning()):
+            self.queue_list.clear()
+            self.retry_failed_button.setEnabled(False)
+
+    def retry_failed_downloads(self):
+        retried = 0
+        for index in range(self.queue_list.count()):
+            item = self.queue_list.item(index)
+            if item.data(QUEUE_STATUS_ROLE) == "failed":
+                self.set_queue_item_status(item, "waiting")
+                retried += 1
+        if retried:
+            self.log.append(self.tr(
+                f"{retried} fehlgeschlagene Downloads erneut eingereiht.",
+                f"Requeued {retried} failed download(s)."
+            ))
+            if not (hasattr(self, "worker") and self.worker.isRunning()):
+                self.start_download()
+
     def start_download(self):
-        self.log.clear()
-        url = self.url_input.text().strip()
+        if self.url_input.toPlainText().strip():
+            self.add_to_queue()
+        queue_item = self.next_waiting_item()
+        if queue_item is None:
+            self.log.append(self.tr("Keine wartenden Downloads in der Warteschlange.", "There are no waiting downloads in the queue."))
+            return
+        url = queue_item.data(QUEUE_URL_ROLE)
+
+        # Fehler von yt-dlp direkt sichtbar machen, ohne dass der Nutzer erst
+        # nach einem versteckten Protokoll-Schalter suchen muss.
+        self.log_toggle.setChecked(True)
 
         self.download_cancelled = False
 
         self.save_current_settings()
 
-        if not url:
-            self.log.append("Bitte eine URL eingeben.")
-            return
-        
         playlist_mode = "video"
         is_playlist = "list=" in url or "playlist" in url
 
         if is_playlist:
             msg = QMessageBox(self)
 
-            msg.setWindowTitle("Playlist erkannt")
+            msg.setWindowTitle(self.tr("Playlist erkannt", "Playlist detected"))
 
             msg.setText(
-                "Diese URL gehört zu einer Playlist.\n\n"
-                "Möchtest du die gesamte Playlist herunterladen\n"
-                "oder nur den aktuell ausgewählten Titel?"
+                self.tr("Diese URL gehört zu einer Playlist.\n\n", "This URL belongs to a playlist.\n\n") +
+                self.tr("Möchtest du die gesamte Playlist herunterladen\noder nur den aktuell ausgewählten Titel?", "Would you like to download the entire playlist\nor only the selected track?")
             )
 
             playlist_button = msg.addButton(
-                "Gesamte Playlist",
+                self.tr("Gesamte Playlist", "Entire playlist"),
                 QMessageBox.ButtonRole.AcceptRole
             )
 
             msg.addButton(
-                "Nur diesen Titel",
+                self.tr("Nur diesen Titel", "This track only"),
                 QMessageBox.ButtonRole.RejectRole
             )
 
@@ -305,29 +551,37 @@ class AudioHarvester(QWidget):
 
             if msg.clickedButton() == playlist_button:
                 playlist_mode = "playlist"
-                self.log.append("Playlist-Modus: Ganze Playlist")
+                self.log.append(self.tr("Playlist-Modus: Ganze Playlist", "Playlist mode: entire playlist"))
             else:
                 playlist_mode = "video"
-                self.log.append("Playlist-Modus: Nur dieses Audio")
+                self.log.append(self.tr("Playlist-Modus: Nur dieses Audio", "Playlist mode: this track only"))
 
         self.progress.setValue(0)
+        self.current_queue_item = queue_item
+        self.set_queue_item_status(queue_item, "running")
+        self.current_download_label.setText(self.tr(f"Aktueller Download: {url}", f"Current download: {url}"))
+        queue_item.setToolTip(url)
         self.download_button.setEnabled(False)
+        self.start_queue_button.setEnabled(False)
+        self.add_queue_button.setEnabled(False)
         self.cancel_button.setEnabled(True)
 
-        audio_format = self.format_box.currentText()
-        quality = self.quality_box.currentText()
+        audio_format = self.selected_format
+        quality = self.selected_quality
 
-        self.log.append("Starte Download...")
-        self.log.append(f"Format: {audio_format}")
-        self.log.append(f"Qualität: {quality}")
+        self.log.append(self.tr("Starte Download...", "Starting download..."))
+        self.log.append(f"{self.tr('Format', 'Format')}: {audio_format}")
+        self.log.append(f"{self.tr('Qualität', 'Quality')}: {quality}")
 
         self.worker = DownloadWorker(
             url, 
             audio_format, 
             quality,
             self.output_dir,
-            self.thumbnail_checkbox.isChecked(),
-            playlist_mode
+            self.embed_cover,
+            playlist_mode,
+            self.filename_template.text().strip() or "%(title)s",
+            self.language
         )
 
         self.worker.log_message.connect(self.log.append)
@@ -335,7 +589,7 @@ class AudioHarvester(QWidget):
         self.worker.status_changed.connect(self.status_label.setText)
         self.worker.finished_download.connect(self.download_finished)
 
-        self.status_label.setText("⬇️ Download läuft...")
+        self.status_label.setText(self.tr("⬇️ Download läuft...", "⬇️ Download in progress..."))
         
         self.worker.start()
 
@@ -346,42 +600,50 @@ class AudioHarvester(QWidget):
             self.worker.stop()
 
         self.cancel_button.setEnabled(False)
-        self.download_button.setEnabled(True)
 
-        self.status_label.setText("⏹️ Download abgebrochen")
-        self.log.append("Download wurde abgebrochen.")
+        self.status_label.setText(self.tr("⏹️ Download abgebrochen", "⏹️ Download cancelled"))
+        self.log.append(self.tr("Download wurde abgebrochen.", "Download was cancelled."))
 
     def download_finished(self, code):
         self.download_button.setEnabled(True)
         self.cancel_button.setEnabled(False)
+        self.start_queue_button.setEnabled(True)
+        self.add_queue_button.setEnabled(True)
+
+        item = self.current_queue_item
+        self.current_queue_item = None
 
         if self.download_cancelled:
-            self.status_label.setText("⏹️ Download abgebrochen")
+            if item is not None:
+                self.set_queue_item_status(item, "waiting")
+            self.current_download_label.setText(self.tr("Download abgebrochen", "Download cancelled"))
+            self.status_label.setText(self.tr("⏹️ Download abgebrochen", "⏹️ Download cancelled"))
 
             QTimer.singleShot(
                 5000,
-                lambda: self.status_label.setText("Bereit")
+                lambda: self.status_label.setText(self.tr("Bereit", "Ready"))
 )
             return
 
         if code == 0:
             self.progress.setValue(100)
+            if item is not None:
+                self.set_queue_item_status(item, "success")
+            self.current_download_label.setText(self.tr("Download abgeschlossen", "Download complete"))
 
             QTimer.singleShot(
                 1000,
-                lambda: self.status_label.setText("✅ Download erfolgreich")
+                lambda: self.status_label.setText(self.tr("✅ Download erfolgreich", "✅ Download complete"))
             )
 
             QTimer.singleShot(
                 6000,
-                lambda: self.status_label.setText("Bereit")
+                lambda: self.status_label.setText(self.tr("Bereit", "Ready"))
             )
 
-            self.log.append("Download erfolgreich.")
+            self.log.append(self.tr("Download erfolgreich.", "Download completed successfully."))
 
-            self.url_input.clear()
-
-            title = getattr(self.worker, "video_title", self.url_input.text().strip())
+            title = getattr(self.worker, "video_title", "Download")
 
             self.history_list.insertItem(0, title)
 
@@ -390,26 +652,35 @@ class AudioHarvester(QWidget):
 
             self.settings["history"] = history[:20]
             save_settings(self.settings)
+            if self.next_waiting_item() is not None:
+                QTimer.singleShot(250, self.start_download)
 
         else:
-            self.status_label.setText("❌ Fehler beim Download")
-            self.log.append("Fehler beim Download.")
+            if item is not None:
+                self.set_queue_item_status(item, "failed")
+            self.current_download_label.setText(self.tr("Download fehlgeschlagen", "Download failed"))
+            self.status_label.setText(self.tr("❌ Fehler beim Download", "❌ Download failed"))
+            self.log.append(self.tr(
+                "Download fehlgeschlagen. Du kannst ihn über 'Fehlgeschlagene erneut versuchen' erneut starten.",
+                "Download failed. Use 'Retry failed downloads' to try it again."
+            ))
+            self.log_toggle.setChecked(True)
+            if self.next_waiting_item() is not None:
+                QTimer.singleShot(250, self.start_download)
 
     def clear_history(self):
         msg = QMessageBox(self)
 
-        msg.setWindowTitle("Historie löschen")
-        msg.setText(
-            "Möchtest du die Download-Historie wirklich löschen?"
-        )
+        msg.setWindowTitle(self.tr("Historie löschen", "Clear history"))
+        msg.setText(self.tr("Möchtest du die Download-Historie wirklich löschen?", "Do you really want to clear the download history?"))
 
         ja_button = msg.addButton(
-            "Ja",
+            self.tr("Ja", "Yes"),
             QMessageBox.ButtonRole.AcceptRole
         )
 
         nein_button = msg.addButton(
-            "Nein",
+            self.tr("Nein", "No"),
             QMessageBox.ButtonRole.RejectRole
         )
 
@@ -424,23 +695,21 @@ class AudioHarvester(QWidget):
 
         save_settings(self.settings)
 
-        self.status_label.setText(
-        "🗑️ Historie gelöscht"
-    )
+        self.status_label.setText(self.tr("🗑️ Historie gelöscht", "🗑️ History cleared"))
         QTimer.singleShot(
             6000,
-            lambda: self.status_label.setText("Bereit")
+            lambda: self.status_label.setText(self.tr("Bereit", "Ready"))
         )
 
     def clear_url(self):
         self.url_input.clear()
-        self.status_label.setText("URL-Feld geleert")
+        self.status_label.setText(self.tr("URL-Feld geleert", "URL field cleared"))
 
     def load_history_item(self, item):
-        self.url_input.setText(item.text())
+        self.url_input.setPlainText(item.text())
 
         self.status_label.setText(
-            "Eintrag aus Historie übernommen"
+            self.tr("Eintrag aus Historie übernommen", "History item loaded")
         )
 
     def open_download_folder(self):
@@ -450,7 +719,7 @@ class AudioHarvester(QWidget):
     def choose_output_folder(self):
         folder = QFileDialog.getExistingDirectory(
             self,
-             "Zielordner auswählen",
+             self.tr("Zielordner auswählen", "Choose output folder"),
             self.output_dir
     )
         if folder:

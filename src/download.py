@@ -1,6 +1,8 @@
 import re
 import shutil
 import subprocess
+import sys
+import importlib.util
 from pathlib import Path
 
 from PyQt6.QtCore import (
@@ -15,7 +17,7 @@ class DownloadWorker(QThread):
     finished_download = pyqtSignal(int)
     status_changed = pyqtSignal(str)
 
-    def __init__(self, url, audio_format, quality, output_dir, thumbnail, playlist_mode):
+    def __init__(self, url, audio_format, quality, output_dir, thumbnail, playlist_mode, filename_template="%(title)s", language="Deutsch"):
         super().__init__()
 
         self.url = url
@@ -24,29 +26,46 @@ class DownloadWorker(QThread):
         self.output_dir = output_dir
         self.thumbnail = thumbnail
         self.playlist_mode = playlist_mode
+        self.filename_template = filename_template
+        self.language = language
 
     def run(self):
         download_dir = Path(self.output_dir)
         download_dir.mkdir(parents=True, exist_ok=True)
 
-        yt_dlp_local = Path.home() / ".local" / "bin" / "yt-dlp"
+        # Desktop launchers often provide a smaller PATH than a terminal. Check
+        # the usual per-user install locations explicitly before giving up.
+        home = Path.home()
+        candidates = [
+            home / ".local" / "bin" / "yt-dlp",
+            home / ".local" / "share" / "pipx" / "venvs" / "yt-dlp" / "bin" / "yt-dlp",
+            home / ".local" / "pipx" / "venvs" / "yt-dlp" / "bin" / "yt-dlp",
+            Path("/usr/local/bin/yt-dlp"),
+            Path("/usr/bin/yt-dlp"),
+        ]
+        yt_dlp = next((str(path) for path in candidates if path.is_file()), None)
+        yt_dlp = yt_dlp or shutil.which("yt-dlp")
 
-        if yt_dlp_local.is_file():
-            yt_dlp = str(yt_dlp_local)
-        else:
-            yt_dlp = shutil.which("yt-dlp")
+        # Also support installations available to the Python environment that
+        # launched the GUI, even when their console script is outside PATH.
+        if not yt_dlp and importlib.util.find_spec("yt_dlp") is not None:
+            yt_dlp = [sys.executable, "-m", "yt_dlp"]
 
         if not yt_dlp:
-            self.log_message.emit("❌ yt-dlp wurde nicht gefunden.")
+            self.log_message.emit(
+                "❌ yt-dlp was not found. Install it with: pipx install yt-dlp"
+                if self.language == "English"
+                else "❌ yt-dlp wurde nicht gefunden. Installation: pipx install yt-dlp"
+            )
             self.finished_download.emit(1)
             return
 
         cmd = [
-            yt_dlp,
+            *([yt_dlp] if isinstance(yt_dlp, str) else yt_dlp),
             "-x",
             "--newline",
             "-o",
-            str(download_dir / "%(title)s.%(ext)s")
+            str(download_dir / f"{self.filename_template}.%(ext)s")
         ]
 
         if self.audio_format == "MP3":
@@ -82,13 +101,23 @@ class DownloadWorker(QThread):
 
         self.video_title = self.url
 
-        self.process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
+        try:
+            self.process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+        except OSError as error:
+            message = (
+                f"❌ yt-dlp could not be started: {error}"
+                if self.language == "English"
+                else f"❌ yt-dlp konnte nicht gestartet werden: {error}"
+            )
+            self.log_message.emit(message)
+            self.finished_download.emit(1)
+            return
 
         for line in self.process.stdout:
             line = line.strip()
@@ -101,13 +130,13 @@ class DownloadWorker(QThread):
                 self.video_title = Path(filename).stem
 
             if "[ExtractAudio]" in line:
-                self.status_changed.emit("🔄 Konvertiere Audio...")
+                self.status_changed.emit("🔄 Converting audio..." if self.language == "English" else "🔄 Konvertiere Audio...")
 
             if "[EmbedThumbnail]" in line:
-                self.status_changed.emit("🖼️ Bette Coverbild ein...")
+                self.status_changed.emit("🖼️ Embedding cover art..." if self.language == "English" else "🖼️ Bette Coverbild ein...")
 
             if "[Metadata]" in line:
-                self.status_changed.emit("📝 Schreibe Metadaten...")
+                self.status_changed.emit("📝 Writing metadata..." if self.language == "English" else "📝 Schreibe Metadaten...")
 
             match = re.search(r"\[download\]\s+(\d+(?:\.\d+)?)%", line)
 

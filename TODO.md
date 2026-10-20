@@ -2,7 +2,7 @@
 
 ## Version 1.0
 
-- [ ] Add English user interface
+- [x] Add English user interface with a saved language selector
 - [x] Add new application icon
 - [x] Improve yt-dlp detection
 - [x] Add build script for DEB package
@@ -13,8 +13,8 @@
 
 ## Later Ideas
 
-- [ ] Download queue
-- [ ] Multiple URLs
+- [x] Download queue
+- [x] Multiple URLs
 - [ ] Cover preview
-- [ ] Custom filename template
+- [x] Custom filename template
 - [ ] AppImage package

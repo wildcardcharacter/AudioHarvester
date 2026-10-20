@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.9.6-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-Linux-orange" alt="Platform">
   <img src="https://img.shields.io/badge/Debian-13-A81D33?logo=debian" alt="Debian">
   <img src="https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white" alt="Python">
@@ -30,7 +30,7 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="screenshots/download-completed.png" width="600" alt="AudioHarvester Preview">
+  <img src="screenshots/deu_main-window.png" width="600" alt="AudioHarvester Hauptfenster auf Deutsch">
 </p>
 
 ---
@@ -44,11 +44,18 @@
 * 📝 Automatic metadata support
 * 📃 Download complete playlists
 * 🎯 Download only the selected track from playlists
+* 📥 Queue several downloads and process them one after another
+* 📊 Per-item queue status with retry for failed downloads
+* 🔗 Enter multiple URLs, one per line
+* 🏷 Custom filename templates using yt-dlp fields
 * ⏹ Cancel running downloads
 * 📜 Download history
 * 🗂 History management
 * 📁 Custom output directory
 * ⚙ Saved settings
+* 🌍 German and English interface, selectable in Settings
+* 🎛 Settings dropdown for language, format, quality and cover art
+* ⌄ More dropdown with About, legal information and changelog
 * 📖 Integrated changelog viewer
 * ⚖ Integrated legal information
 * 🔍 Automatic yt-dlp detection
@@ -60,28 +67,16 @@
 
 ## 🖼 Screenshots
 
-### Main Window
+### Deutsch
 
 <p align="center">
-  <img src="screenshots/main-window.png" width="520" alt="Main Window">
+  <img src="screenshots/deu_main-window.png" width="520" alt="AudioHarvester Hauptfenster auf Deutsch">
 </p>
 
-### Playlist Detection
+### English
 
 <p align="center">
-  <img src="screenshots/playlist-detection.png" width="520" alt="Playlist Detection">
-</p>
-
-### About Dialog
-
-<p align="center">
-  <img src="screenshots/about-dialog.png" width="520" alt="About Dialog">
-</p>
-
-### Legal Notice
-
-<p align="center">
-  <img src="screenshots/legal-dialog.png" width="520" alt="Legal Notice">
+  <img src="screenshots/eng_main-window.png" width="520" alt="AudioHarvester main window in English">
 </p>
 
 ---
@@ -93,7 +88,7 @@
 Download the latest release from the GitHub Releases page.
 
 ```bash
-sudo apt install ./audioharvester_0.9.6_all.deb
+sudo apt install ./audioharvester_1.0.0_all.deb
 ```
 
 Start AudioHarvester:
@@ -140,6 +135,18 @@ Run the application:
 python3 src/main.py
 ```
 
+## ⚙ Using AudioHarvester
+
+Paste one or more YouTube URLs into the URL box, with one link per line, then choose **Add to queue**. Select **Start queue** to process the links in order. Playlist links offer a choice between downloading the full playlist or only the selected track.
+
+Each queue entry shows whether it is waiting, downloading, complete, or failed. Use **Retry failed downloads** to requeue failed entries. The current URL and download progress are shown in the controls section. The log can be collapsed when it is not needed.
+
+Open the **Settings** dropdown to change the interface language, audio format, quality, or cover art embedding. These preferences are saved automatically.
+
+The filename field accepts yt-dlp output template fields. For example, use `%(artist)s - %(title)s` to name files with the artist and title. The default is `%(title)s`.
+
+The **More** dropdown contains the About, legal information, and changelog dialogs.
+
 ---
 
 ## ⚙ Requirements
@@ -165,7 +172,6 @@ AudioHarvester also includes an integrated Markdown-based changelog viewer.
 
 Planned features:
 
-* 🌍 English user interface
 * 📦 AppImage package
 * 📦 Flatpak package
 * 🚀 Flathub release
@@ -189,7 +195,7 @@ If you find a bug or have an idea for a new feature, feel free to open an issue.
 
 This project is licensed under the MIT License.
 
-See **LICENSE.txt** for more information.
+See **LICENSE** for more information.
 
 ---
 
