@@ -36,7 +36,9 @@ def show_changelog_dialog(parent=None, language="Deutsch"):
         )
     else:
         changelog_view.setPlainText(
-            "CHANGELOG.md wurde nicht gefunden."
+            "CHANGELOG.md was not found."
+            if language == "English"
+            else "CHANGELOG.md wurde nicht gefunden."
         )
 
     layout.addWidget(changelog_view)

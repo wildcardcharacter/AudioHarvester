@@ -409,9 +409,21 @@ class AudioHarvester(QWidget):
             "Zeigt die Änderungen der aktuellen Versionen": "Show version history",
             "Zeigt rechtliche Hinweise": "Show legal information",
             "⚙ Einstellungen": "⚙ Settings",
-            "Optionen": "Options",
         }
         for widget in self.findChildren(QWidget):
+            # QGroupBox exposes its caption through title(), not text(), so it
+            # needs its own translation pass.
+            if isinstance(widget, QGroupBox):
+                title = widget.title()
+                if title in translations:
+                    widget.setTitle(
+                        translations[title] if self.language == "English" else title
+                    )
+                elif title in translations.values():
+                    widget.setTitle(
+                        next(de for de, en in translations.items() if en == title)
+                        if self.language == "Deutsch" else title
+                    )
             if hasattr(widget, "text") and callable(widget.text):
                 current = widget.text()
                 if current.startswith("Zielordner: ") or current.startswith("Output folder: "):
