@@ -1,6 +1,7 @@
 # Standardbibliothek
 import sys
 import subprocess
+import re
 from pathlib import Path
 from version import VERSION
 from about import show_info_dialog
@@ -421,7 +422,7 @@ class AudioHarvester(QWidget):
     def check_for_updates(self):
         self.update_button.setEnabled(False)
         self.update_button.setText(self.tr("Prüfe Updates …", "Checking for updates …"))
-        self.release_worker = ReleaseCheckWorker()
+        self.release_worker = ReleaseCheckWorker(self.language)
         self.release_worker.succeeded.connect(self.update_check_succeeded)
         self.release_worker.failed.connect(self.update_check_failed)
         self.release_worker.finished.connect(self.reset_update_button)
@@ -441,7 +442,10 @@ class AudioHarvester(QWidget):
         try:
             has_update = version_key(release["version"]) > version_key(current_version)
         except ValueError as error:
-            self.update_check_failed(str(error))
+            self.update_check_failed(self.tr(
+                "Die Update-Daten enthalten eine ungültige Versionsnummer.",
+                "The update data contains an invalid version number.",
+            ))
             return
 
         if not has_update:
@@ -492,7 +496,10 @@ class AudioHarvester(QWidget):
         notes = QTextBrowser()
         notes.setOpenExternalLinks(True)
         notes.setPlaceholderText(self.tr("Keine Versionshinweise verfügbar.", "No release notes available."))
-        notes.setMarkdown(release["notes"] or self.tr("Keine Versionshinweise verfügbar.", "No release notes available."))
+        notes.setMarkdown(
+            self.localized_release_notes(release["notes"])
+            or self.tr("Keine Versionshinweise verfügbar.", "No release notes available.")
+        )
         notes.setStyleSheet("border: 1px solid palette(mid); border-radius: 6px; padding: 8px;")
         layout.addWidget(notes, 1)
 
@@ -512,9 +519,32 @@ class AudioHarvester(QWidget):
             return None
         return "install" if can_install else "open"
 
+    def localized_release_notes(self, notes):
+        sections = re.split(r"(?m)(?=^##\s+)", notes.strip())
+        headings = [
+            section.splitlines()[0][3:].strip().casefold().replace("’", "'")
+            for section in sections
+            if section.startswith("## ")
+        ]
+        english_headings = {"what's new", "whats new"}
+        german_headings = {"neu", "was ist neu"}
+        if not (english_headings.intersection(headings) and german_headings.intersection(headings)):
+            return notes
+
+        excluded = german_headings if self.language == "English" else english_headings
+        visible_sections = []
+        for section in sections:
+            if section.startswith("## "):
+                heading = section.splitlines()[0][3:].strip().casefold().replace("’", "'")
+                if heading in excluded:
+                    continue
+            if section.strip():
+                visible_sections.append(section.strip())
+        return "\n\n".join(visible_sections)
+
     def install_update(self, release):
         self.update_button.setEnabled(False)
-        self.update_install_worker = PackageInstallWorker(release)
+        self.update_install_worker = PackageInstallWorker(release, self.language)
         self.update_install_worker.progress.connect(self.status_label.setText)
         self.update_install_worker.failed.connect(self.update_install_failed)
         self.update_install_worker.succeeded.connect(self.update_install_succeeded)

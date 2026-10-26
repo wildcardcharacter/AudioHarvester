@@ -2,7 +2,9 @@ from PyQt6.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QLabel,
-    QPushButton
+    QPushButton,
+    QScrollArea,
+    QFrame,
 )
 
 from PyQt6.QtCore import Qt
@@ -12,9 +14,12 @@ def show_legal_dialog(parent=None, language="Deutsch"):
     english = language == "English"
     dialog = QDialog(parent)
     dialog.setWindowTitle("Legal notice" if english else "Rechtlicher Hinweis")
-    dialog.resize(600, 450)
+    dialog.resize(620, 520)
+    dialog.setMinimumSize(380, 320)
 
     layout = QVBoxLayout()
+    layout.setContentsMargins(18, 16, 18, 16)
+    layout.setSpacing(12)
 
     title_label = QLabel("<h2>Legal notice</h2>" if english else "<h2>Rechtlicher Hinweis</h2>")
     title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -40,8 +45,14 @@ def show_legal_dialog(parent=None, language="Deutsch"):
 
     text_label.setWordWrap(True)
     text_label.setTextFormat(Qt.TextFormat.RichText)
+    text_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+    text_label.setMargin(14)
 
-    layout.addWidget(text_label)
+    scroll_area = QScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+    scroll_area.setWidget(text_label)
+    layout.addWidget(scroll_area, 1)
 
     close_button = QPushButton("Close" if english else "Schließen")
     close_button.clicked.connect(dialog.close)

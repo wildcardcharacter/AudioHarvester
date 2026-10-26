@@ -2,6 +2,14 @@
 
 All notable changes to AudioHarvester are documented here.
 
+## 1.5.8
+
+### Interface and translations
+
+- Make the legal notice scrollable and refresh the About dialog layout.
+- Improve update status and error messages in German and English.
+- Show bilingual update release notes in the selected interface language when both language sections are available.
+
 ## 1.5.7
 
 ### Fixes and interface

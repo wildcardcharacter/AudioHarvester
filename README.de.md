@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5.7-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.5.8-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-Linux-orange" alt="Plattform">
   <img src="https://img.shields.io/badge/Debian-13-A81D33?logo=debian" alt="Debian">
   <img src="https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white" alt="Python">
@@ -92,7 +92,7 @@
 Lade die aktuelle Version von der [GitHub-Releases-Seite](https://github.com/wildcardcharacter/AudioHarvester/releases/latest) herunter.
 
 ```bash
-sudo apt install ./audioharvester_1.5.7_all.deb
+sudo apt install ./audioharvester_1.5.8_all.deb
 ```
 
 AudioHarvester starten:
