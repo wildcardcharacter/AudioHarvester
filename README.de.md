@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5.5-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.5.6-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-Linux-orange" alt="Plattform">
   <img src="https://img.shields.io/badge/Debian-13-A81D33?logo=debian" alt="Debian">
   <img src="https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white" alt="Python">
@@ -62,6 +62,7 @@
 * ⚖ Integrierte rechtliche Hinweise
 * 🔍 yt-dlp automatisch erkennen
 * 🔄 Updates über GitHub Releases suchen und installieren
+* 🚪 AudioHarvester über das Hauptfenster beenden
 * 📦 Als Debian-Paket installierbar
 * 🖥 Eintrag im XFCE-Anwendungsmenü
 * 🧩 Modularer Programmaufbau
@@ -91,7 +92,7 @@
 Lade die aktuelle Version von der [GitHub-Releases-Seite](https://github.com/wildcardcharacter/AudioHarvester/releases/latest) herunter.
 
 ```bash
-sudo apt install ./audioharvester_1.5.5_all.deb
+sudo apt install ./audioharvester_1.5.6_all.deb
 ```
 
 AudioHarvester starten:
@@ -153,6 +154,8 @@ Das Menü **Mehr** enthält die Dialoge für Informationen, Rechtliches und Chan
 ### Updates
 
 Klicke oben im Fenster auf **Updates prüfen**, um auf GitHub nach einer neueren Version zu suchen. AudioHarvester zeigt die Versionshinweise an. Wenn das Programm als Debian-Paket installiert wurde, kann es das Update herunterladen und installieren. Dafür ist eine Systemauthentifizierung erforderlich. Alternativ kannst du die Release-Seite öffnen und das Paket manuell installieren.
+
+Mit **Beenden** neben den Einstellungen schließt du AudioHarvester.
 
 ---
 

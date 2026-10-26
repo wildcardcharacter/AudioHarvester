@@ -13,7 +13,7 @@ ICON_FILE = PROJECT_DIR / "assets" / "icons" / "audioharvester.png"
 
 # Drittanbieter
 from PyQt6.QtGui import QIcon, QActionGroup, QDesktopServices
-from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer, QUrl
+from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer, QUrl, QProcess
 from PyQt6.QtWidgets import (
     QGroupBox,
     QListWidget,
@@ -92,6 +92,9 @@ class AudioHarvester(QWidget):
         self.settings_button = QToolButton()
         self.settings_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         top_bar.addWidget(self.settings_button)
+        self.quit_button = QPushButton("Beenden")
+        self.quit_button.clicked.connect(self.close)
+        top_bar.addWidget(self.quit_button)
         self.more_button = QToolButton()
         self.more_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.more_menu = QMenu(self.more_button)
@@ -535,8 +538,21 @@ class AudioHarvester(QWidget):
         if answer == QMessageBox.StandardButton.Yes:
             executable = Path("/usr/bin/audioharvester")
             if executable.exists():
-                subprocess.Popen([str(executable)], start_new_session=True)
-                self.close()
+                if self.update_install_worker.isRunning():
+                    self.update_install_worker.wait()
+                started, _pid = QProcess.startDetached(
+                    str(executable), [], str(Path.home())
+                )
+                if started:
+                    self.close()
+                else:
+                    QMessageBox.warning(
+                        self, self.tr("Neustart fehlgeschlagen", "Restart failed"),
+                        self.tr(
+                            "Das Update wurde installiert, AudioHarvester konnte aber nicht automatisch gestartet werden. Bitte starte es über das Anwendungsmenü.",
+                            "The update was installed, but AudioHarvester could not be started automatically. Please launch it from the applications menu.",
+                        ),
+                    )
             else:
                 QMessageBox.information(
                     self, self.tr("Neustart erforderlich", "Restart required"),
@@ -564,6 +580,7 @@ class AudioHarvester(QWidget):
             "Zeigt die Änderungen der aktuellen Versionen": "Show version history",
             "Zeigt rechtliche Hinweise": "Show legal information",
             "⚙ Einstellungen": "⚙ Settings",
+            "Beenden": "Quit",
         }
         for widget in self.findChildren(QWidget):
             # QGroupBox exposes its caption through title(), not text(), so it

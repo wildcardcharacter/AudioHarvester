@@ -2,6 +2,13 @@
 
 All notable changes to AudioHarvester are documented here.
 
+## 1.5.6
+
+### Fixes and interface
+
+- Make automatic restart after installing an update more reliable and report when relaunch fails.
+- Add a **Beenden** button beside Settings.
+
 ## 1.5.5
 
 ### Fixes and interface

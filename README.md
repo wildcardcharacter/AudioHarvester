@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5.5-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.5.6-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-Linux-orange" alt="Platform">
   <img src="https://img.shields.io/badge/Debian-13-A81D33?logo=debian" alt="Debian">
   <img src="https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white" alt="Python">
@@ -62,6 +62,7 @@
 * ⚖ Integrated legal information
 * 🔍 Automatic yt-dlp detection
 * 🔄 Check for and install updates from GitHub Releases
+* 🚪 Quit AudioHarvester from the main window
 * 📦 Installable Debian package
 * 🖥 XFCE application menu integration
 * 🧩 Modular project architecture
@@ -91,7 +92,7 @@
 Download the latest release from the GitHub Releases page.
 
 ```bash
-sudo apt install ./audioharvester_1.5.5_all.deb
+sudo apt install ./audioharvester_1.5.6_all.deb
 ```
 
 Start AudioHarvester:
@@ -153,6 +154,8 @@ The **More** dropdown contains the About, legal information, and changelog dialo
 ### Updates
 
 Choose **Check for updates** at the top of the window to check GitHub for a newer release. AudioHarvester shows the release notes and, when installed from the Debian package, can download and install the update. Installing it requires system authentication. You can also open the release page and install the package manually.
+
+Use **Quit** beside Settings to close AudioHarvester.
 
 ---
 
