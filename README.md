@@ -1,5 +1,7 @@
 # AudioHarvester
 
+**Languages:** [English](README.md) | [Deutsch](README.de.md)
+
 <p align="center">
   <img src="assets/icons/audioharvester.png" width="140" alt="AudioHarvester Logo">
 </p>
@@ -59,6 +61,7 @@
 * 📖 Integrated changelog viewer
 * ⚖ Integrated legal information
 * 🔍 Automatic yt-dlp detection
+* 🔄 Check for and install updates from GitHub Releases
 * 📦 Installable Debian package
 * 🖥 XFCE application menu integration
 * 🧩 Modular project architecture
@@ -146,6 +149,10 @@ Open the **Settings** dropdown to change the interface language, audio format, q
 The filename field accepts yt-dlp output template fields. For example, use `%(artist)s - %(title)s` to name files with the artist and title. The default is `%(title)s`.
 
 The **More** dropdown contains the About, legal information, and changelog dialogs.
+
+### Updates
+
+Choose **Check for updates** at the top of the window to check GitHub for a newer release. AudioHarvester shows the release notes and, when installed from the Debian package, can download and install the update. Installing it requires system authentication. You can also open the release page and install the package manually.
 
 ---
 
