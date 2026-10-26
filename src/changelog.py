@@ -21,9 +21,14 @@ def show_changelog_dialog(parent=None, language="Deutsch"):
         QTextEdit.LineWrapMode.WidgetWidth
     )
 
-    changelog_file = (
-        Path(__file__).resolve().parent.parent
-        / "CHANGELOG.md"
+    module_dir = Path(__file__).resolve().parent
+    changelog_file = next(
+        (
+            path
+            for path in (module_dir / "CHANGELOG.md", module_dir.parent / "CHANGELOG.md")
+            if path.is_file()
+        ),
+        module_dir / "CHANGELOG.md",
     )
 
     if changelog_file.exists():

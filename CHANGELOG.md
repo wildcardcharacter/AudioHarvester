@@ -2,6 +2,13 @@
 
 All notable changes to AudioHarvester are documented here.
 
+## 1.5.7
+
+### Fixes and interface
+
+- Fix changelog lookup for installed Debian packages and source checkouts.
+- Move **Mehr** before **Beenden** in the top bar.
+
 ## 1.5.6
 
 ### Fixes and interface
