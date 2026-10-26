@@ -19,8 +19,15 @@ from version import VERSION
 from pathlib import Path
 
 
-PROJECT_DIR = Path(__file__).resolve().parent
-ICON_FILE = PROJECT_DIR / "icons" / "audioharvester.png"
+MODULE_DIR = Path(__file__).resolve().parent
+ICON_FILE = next(
+    (path for path in (
+        MODULE_DIR.parent / "assets" / "icons" / "audioharvester.png",
+        MODULE_DIR / "assets" / "icons" / "audioharvester.png",
+        MODULE_DIR / "icons" / "audioharvester.png",
+    ) if path.exists()),
+    MODULE_DIR / "icons" / "audioharvester.png",
+)
 
 
 def show_info_dialog(parent=None, language="Deutsch"):

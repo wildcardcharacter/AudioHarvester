@@ -2,6 +2,15 @@
 
 All notable changes to AudioHarvester are documented here.
 
+## 1.5.0
+
+### Updates and interface
+
+- Added a GitHub release checker and Debian package updater.
+- Improved the update dialog with readable release notes and version details.
+- Moved the application icon and screenshots into `assets/`.
+- Updated release and package metadata to version 1.5.0.
+
 ## 1.0.0
 
 ### New features

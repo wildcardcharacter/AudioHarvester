@@ -1,7 +1,7 @@
 # AudioHarvester
 
 <p align="center">
-  <img src="icons/audioharvester.png" width="140" alt="AudioHarvester Logo">
+  <img src="assets/icons/audioharvester.png" width="140" alt="AudioHarvester Logo">
 </p>
 
 <h1 align="center">AudioHarvester</h1>
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.5.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-Linux-orange" alt="Platform">
   <img src="https://img.shields.io/badge/Debian-13-A81D33?logo=debian" alt="Debian">
   <img src="https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white" alt="Python">
@@ -30,7 +30,7 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="screenshots/deu_main-window.png" width="600" alt="AudioHarvester Hauptfenster auf Deutsch">
+  <img src="assets/img/deu_main-window.png" width="600" alt="AudioHarvester Hauptfenster auf Deutsch">
 </p>
 
 ---
@@ -70,13 +70,13 @@
 ### Deutsch
 
 <p align="center">
-  <img src="screenshots/deu_main-window.png" width="520" alt="AudioHarvester Hauptfenster auf Deutsch">
+  <img src="assets/img/deu_main-window.png" width="520" alt="AudioHarvester Hauptfenster auf Deutsch">
 </p>
 
 ### English
 
 <p align="center">
-  <img src="screenshots/eng_main-window.png" width="520" alt="AudioHarvester main window in English">
+  <img src="assets/img/eng_main-window.png" width="520" alt="AudioHarvester main window in English">
 </p>
 
 ---
@@ -88,7 +88,7 @@
 Download the latest release from the GitHub Releases page.
 
 ```bash
-sudo apt install ./audioharvester_1.0.0_all.deb
+sudo apt install ./audioharvester_1.5.0_all.deb
 ```
 
 Start AudioHarvester:

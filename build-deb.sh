@@ -17,11 +17,13 @@ cp src/download.py "$APP_DIR/"
 cp src/legal.py "$APP_DIR/"
 cp src/about.py "$APP_DIR/"
 cp src/changelog.py "$APP_DIR/"
+cp src/updater.py "$APP_DIR/"
 cp CHANGELOG.md "$APP_DIR/"
 
-mkdir -p "$APP_DIR/icons"
-cp icons/audioharvester.png "$APP_DIR/icons/"
-cp icons/audioharvester.png packaging/deb/usr/share/pixmaps/
+mkdir -p "$APP_DIR/assets/icons"
+cp assets/icons/audioharvester.png "$APP_DIR/assets/icons/"
+cp assets/icons/audioharvester.png packaging/deb/usr/share/pixmaps/
+sed -i "s/^Version:.*/Version: ${VERSION}/" packaging/deb/DEBIAN/control
 
 echo "Building ${PACKAGE_NAME}_${VERSION}_${ARCH}.deb..."
 

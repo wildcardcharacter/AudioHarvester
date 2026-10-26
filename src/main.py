@@ -9,11 +9,11 @@ from download import DownloadWorker
 from legal import show_legal_dialog
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-ICON_FILE = PROJECT_DIR / "icons" / "audioharvester.png"
+ICON_FILE = PROJECT_DIR / "assets" / "icons" / "audioharvester.png"
 
 # Drittanbieter
-from PyQt6.QtGui import QIcon, QActionGroup
-from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer
+from PyQt6.QtGui import QIcon, QActionGroup, QDesktopServices
+from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer, QUrl
 from PyQt6.QtWidgets import (
     QGroupBox,
     QListWidget,
@@ -32,12 +32,16 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QCheckBox,
     QDialog,
+    QTextBrowser,
     QScrollArea,
     QToolButton,
     QMenu,
   )
 # Eigene Module
 from settings import load_settings, save_settings
+from updater import (
+    PackageInstallWorker, ReleaseCheckWorker, installed_deb_version, version_key,
+)
 
 QUEUE_URL_ROLE = int(Qt.ItemDataRole.UserRole)
 QUEUE_STATUS_ROLE = QUEUE_URL_ROLE + 1
@@ -51,6 +55,7 @@ class AudioHarvester(QWidget):
             QIcon(
                 str(
                     Path(__file__).resolve().parent.parent
+                    / "assets"
                     / "icons"
                     / "audioharvester.png"
                 )
@@ -79,6 +84,9 @@ class AudioHarvester(QWidget):
         layout = QVBoxLayout()
         top_bar = QHBoxLayout()
         top_bar.addStretch()
+        self.update_button = QPushButton("⬆ Updates prüfen")
+        self.update_button.clicked.connect(self.check_for_updates)
+        top_bar.addWidget(self.update_button)
         self.settings_button = QToolButton()
         self.settings_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         top_bar.addWidget(self.settings_button)
@@ -365,6 +373,7 @@ class AudioHarvester(QWidget):
         self.cover_action.setChecked(self.embed_cover)
         self.cover_action.triggered.connect(self.set_cover_embedding)
         self.update_settings_menu_language()
+        self.update_button.setText(self.tr("⬆ Updates prüfen", "⬆ Check for updates"))
 
     def set_audio_format(self, audio_format):
         self.selected_format = audio_format
@@ -387,6 +396,134 @@ class AudioHarvester(QWidget):
         self.format_menu.setTitle(self.tr("Format", "Format"))
         self.quality_menu.setTitle(self.tr("Qualität", "Quality"))
         self.cover_action.setText(self.tr("Coverbild einbetten", "Embed cover art"))
+
+    def check_for_updates(self):
+        self.update_button.setEnabled(False)
+        self.update_button.setText(self.tr("Prüfe Updates …", "Checking for updates …"))
+        self.release_worker = ReleaseCheckWorker()
+        self.release_worker.succeeded.connect(self.update_check_succeeded)
+        self.release_worker.failed.connect(self.update_check_failed)
+        self.release_worker.finished.connect(self.reset_update_button)
+        self.release_worker.start()
+
+    def reset_update_button(self):
+        self.update_button.setEnabled(True)
+        self.update_button.setText(self.tr("⬆ Updates prüfen", "⬆ Check for updates"))
+
+    def update_check_failed(self, error):
+        QMessageBox.warning(
+            self, self.tr("Updateprüfung fehlgeschlagen", "Update check failed"), error
+        )
+
+    def update_check_succeeded(self, release):
+        current_version = installed_deb_version() or VERSION
+        try:
+            has_update = version_key(release["version"]) > version_key(current_version)
+        except ValueError as error:
+            self.update_check_failed(str(error))
+            return
+
+        if not has_update:
+            QMessageBox.information(
+                self, self.tr("AudioHarvester ist aktuell", "AudioHarvester is up to date"),
+                self.tr(
+                    f"Du verwendest bereits AudioHarvester {current_version}.",
+                    f"You are already using AudioHarvester {current_version}.",
+                ),
+            )
+            return
+
+        package_installed = installed_deb_version() is not None
+        action = self.show_update_dialog(
+            release, current_version, package_installed and bool(release["url"])
+        )
+        if action == "install":
+            self.install_update(release)
+        elif action == "open":
+            QDesktopServices.openUrl(QUrl(release["release_url"]))
+
+    def show_update_dialog(self, release, current_version, can_install):
+        dialog = QDialog(self)
+        dialog.setWindowTitle(self.tr("Update verfügbar", "Update available"))
+        dialog.setMinimumSize(560, 430)
+        dialog.resize(640, 500)
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(24, 22, 24, 20)
+        layout.setSpacing(12)
+
+        heading = QLabel(self.tr("Eine neue Version ist verfügbar", "A new version is available"))
+        heading.setStyleSheet("font-size: 18px; font-weight: 600;")
+        layout.addWidget(heading)
+
+        versions = QLabel(
+            f"<b>{self.tr('Installiert', 'Installed')}</b>  {current_version}"
+            f"<br><b>{self.tr('Verfügbar', 'Available')}</b>  {release['version']}"
+        )
+        versions.setTextFormat(Qt.TextFormat.RichText)
+        versions.setStyleSheet("padding: 10px 12px; background: palette(alternate-base); border-radius: 6px;")
+        layout.addWidget(versions)
+
+        notes_heading = QLabel(self.tr("Versionshinweise", "Release notes"))
+        notes_heading.setStyleSheet("font-weight: 600; margin-top: 4px;")
+        layout.addWidget(notes_heading)
+
+        notes = QTextBrowser()
+        notes.setOpenExternalLinks(True)
+        notes.setPlaceholderText(self.tr("Keine Versionshinweise verfügbar.", "No release notes available."))
+        notes.setMarkdown(release["notes"] or self.tr("Keine Versionshinweise verfügbar.", "No release notes available."))
+        notes.setStyleSheet("border: 1px solid palette(mid); border-radius: 6px; padding: 8px;")
+        layout.addWidget(notes, 1)
+
+        buttons = QHBoxLayout()
+        buttons.addStretch()
+        later_button = QPushButton(self.tr("Später", "Later"))
+        later_button.clicked.connect(dialog.reject)
+        buttons.addWidget(later_button)
+        action_text = self.tr("Update installieren", "Install update") if can_install else self.tr("Release-Seite öffnen", "Open release page")
+        action_button = QPushButton(action_text)
+        action_button.setDefault(True)
+        action_button.clicked.connect(dialog.accept)
+        buttons.addWidget(action_button)
+        layout.addLayout(buttons)
+
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return None
+        return "install" if can_install else "open"
+
+    def install_update(self, release):
+        self.update_button.setEnabled(False)
+        self.update_install_worker = PackageInstallWorker(release)
+        self.update_install_worker.progress.connect(self.status_label.setText)
+        self.update_install_worker.failed.connect(self.update_install_failed)
+        self.update_install_worker.succeeded.connect(self.update_install_succeeded)
+        self.update_install_worker.finished.connect(self.reset_update_button)
+        self.update_install_worker.start()
+
+    def update_install_failed(self, error):
+        QMessageBox.critical(
+            self, self.tr("Update fehlgeschlagen", "Update failed"), error
+        )
+
+    def update_install_succeeded(self):
+        answer = QMessageBox.question(
+            self, self.tr("Update installiert", "Update installed"),
+            self.tr(
+                "AudioHarvester wurde aktualisiert. Jetzt neu starten?",
+                "AudioHarvester was updated. Restart now?",
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if answer == QMessageBox.StandardButton.Yes:
+            executable = Path("/usr/bin/audioharvester")
+            if executable.exists():
+                subprocess.Popen([str(executable)], start_new_session=True)
+                self.close()
+            else:
+                QMessageBox.information(
+                    self, self.tr("Neustart erforderlich", "Restart required"),
+                    self.tr("Bitte starte AudioHarvester über das Anwendungsmenü neu.", "Please restart AudioHarvester from the applications menu."),
+                )
 
     def apply_language(self):
         translations = {
@@ -444,6 +581,7 @@ class AudioHarvester(QWidget):
         self.legal_action.setText(self.tr("Rechtliches", "Legal information"))
         self.info_action.setText(self.tr("Info", "About"))
         self.update_settings_menu_language()
+        self.update_button.setText(self.tr("⬆ Updates prüfen", "⬆ Check for updates"))
         if self.current_queue_item is None:
             self.current_download_label.setText(self.tr("Kein Download aktiv", "No download active"))
         else:
