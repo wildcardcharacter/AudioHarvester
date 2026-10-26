@@ -2,6 +2,14 @@
 
 All notable changes to AudioHarvester are documented here.
 
+## 1.5.5
+
+### Fixes and interface
+
+- Save user settings in the XDG configuration directory so installed copies can start without writing to `/usr/share`.
+- Declare Python-Markdown as a Debian package dependency.
+- Reorganize the main window into a more compact two-column layout.
+
 ## 1.5.0
 
 ### Updates and interface

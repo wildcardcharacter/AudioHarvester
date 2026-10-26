@@ -1,9 +1,10 @@
 import json
+import os
 from pathlib import Path
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
-
-CONFIG_DIR = PROJECT_DIR / "config"
+CONFIG_DIR = Path(
+    os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
+) / "audioharvester"
 CONFIG_FILE = CONFIG_DIR / "settings.json"
 
 

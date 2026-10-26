@@ -76,12 +76,14 @@ class AudioHarvester(QWidget):
             max_height = max(1, available.height() - 80)
         else:
             max_width, max_height = 1200, 900
-        self.setMinimumSize(min(480, max_width), min(360, max_height))
-        width = min(settings.get("window_width", 650), max_width)
-        height = min(settings.get("window_height", 450), max_height)
+        self.setMinimumSize(min(760, max_width), min(500, max_height))
+        width = min(settings.get("window_width", 900), max_width)
+        height = min(settings.get("window_height", 600), max_height)
         self.resize(max(self.minimumWidth(), width), max(self.minimumHeight(), height))
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(12, 10, 12, 12)
+        layout.setSpacing(10)
         top_bar = QHBoxLayout()
         top_bar.addStretch()
         self.update_button = QPushButton("⬆ Updates prüfen")
@@ -105,11 +107,11 @@ class AudioHarvester(QWidget):
 
         download_group = QGroupBox("Download")
         download_layout = QVBoxLayout()
-        download_layout.setSpacing(8)
+        download_layout.setContentsMargins(10, 10, 10, 10)
+        download_layout.setSpacing(6)
 
         download_group.setLayout(download_layout)
 
-        layout.addWidget(download_group)
         self.settings = load_settings()
         self.language = self.settings.get("language", "Deutsch")
         self.selected_format = self.settings.get("format", "MP3")
@@ -120,26 +122,27 @@ class AudioHarvester(QWidget):
 
         folder_group = QGroupBox("Zielordner")
         folder_layout = QVBoxLayout()
-        folder_layout.setSpacing(8)
+        folder_layout.setContentsMargins(10, 10, 10, 10)
+        folder_layout.setSpacing(6)
 
 
         folder_group.setLayout(folder_layout)
-        layout.addWidget(folder_group)
 
         actions_group = QGroupBox("Aktionen")
         actions_layout = QVBoxLayout()
-        actions_layout.setSpacing(8)
+        actions_layout.setContentsMargins(10, 10, 10, 10)
+        actions_layout.setSpacing(6)
 
         actions_group.setLayout(actions_layout)
 
-        layout.addWidget(actions_group)
 
         download_layout.addWidget(QLabel("YouTube URL(s) – mehrere Links zeilenweise"))
 
         url_layout = QHBoxLayout()
 
         self.url_input = QTextEdit()
-        self.url_input.setMaximumHeight(70)
+        self.url_input.setMinimumHeight(48)
+        self.url_input.setMaximumHeight(58)
         url_layout.addWidget(self.url_input)
 
         self.clear_url_button = QPushButton("✖")
@@ -195,6 +198,7 @@ class AudioHarvester(QWidget):
          str(Path.home() / "Musik" / "AudioHarvester")
 )
         self.output_label = QLabel(f"Zielordner: {self.output_dir}")
+        self.output_label.setWordWrap(True)
         folder_layout.addWidget(self.output_label)
 
         self.choose_folder_button = QPushButton("Zielordner auswählen")
@@ -223,7 +227,7 @@ class AudioHarvester(QWidget):
 
         self.folder_button = QPushButton("📂 Ordner öffnen")
         self.folder_button.clicked.connect(self.open_download_folder)
-        button_layout.addWidget(self.folder_button)
+        folder_layout.addWidget(self.folder_button)
 
         self.folder_button.setToolTip(
             "Öffnet den aktuellen Zielordner"
@@ -232,11 +236,14 @@ class AudioHarvester(QWidget):
         actions_layout.addLayout(button_layout)
         history_group = QGroupBox("Letzte Downloads")
         history_layout = QVBoxLayout()
-        history_layout.setSpacing(8)
+        history_layout.setContentsMargins(10, 10, 10, 10)
+        history_layout.setSpacing(6)
         
         history_group.setLayout(history_layout)
 
         self.history_list = QListWidget()
+        self.history_list.setMinimumHeight(72)
+        self.history_list.setMaximumHeight(126)
         history_layout.addWidget(self.history_list)
 
         self.history_list.itemDoubleClicked.connect(
@@ -253,8 +260,6 @@ class AudioHarvester(QWidget):
             "Löscht die Download-Historie"
         )
 
-        layout.addWidget(history_group)
-
         self.log = QTextEdit()
         self.log.setReadOnly(True)
         self.log_toggle = QPushButton()
@@ -262,6 +267,19 @@ class AudioHarvester(QWidget):
         self.log_toggle.setChecked(False)
         self.log_toggle.setMinimumHeight(32)
         self.log_toggle.toggled.connect(self.toggle_log)
+        workspace = QHBoxLayout()
+        workspace.setSpacing(10)
+        left_column = QVBoxLayout()
+        left_column.setSpacing(10)
+        left_column.addWidget(download_group, 1)
+        right_column = QVBoxLayout()
+        right_column.setSpacing(10)
+        right_column.addWidget(actions_group)
+        right_column.addWidget(folder_group)
+        right_column.addWidget(history_group, 1)
+        workspace.addLayout(left_column, 3)
+        workspace.addLayout(right_column, 2)
+        layout.addLayout(workspace, 1)
         layout.addWidget(self.log_toggle)
         self.log.hide()
         layout.addWidget(self.log)
