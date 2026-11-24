@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5.8-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.5.9-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-Linux-orange" alt="Platform">
   <img src="https://img.shields.io/badge/Debian-13-A81D33?logo=debian" alt="Debian">
   <img src="https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white" alt="Python">
@@ -46,6 +46,7 @@
 * 📝 Automatic metadata support
 * 📃 Download complete playlists
 * 🎯 Download only the selected track from playlists
+* ☑ Select specific tracks from a playlist before downloading
 * 📥 Queue several downloads and process them one after another
 * 📊 Per-item queue status with retry for failed downloads
 * 🔗 Enter multiple URLs, one per line
@@ -61,6 +62,9 @@
 * 📖 Integrated changelog viewer
 * ⚖ Integrated legal information
 * 🔍 Automatic yt-dlp detection
+* ℹ Show and update the installed yt-dlp version according to its installation method
+* ⌨ Keyboard shortcuts for starting downloads and focusing the URL field
+* 🧹 Optional automatic removal of completed queue entries
 * 🔄 Check for and install updates from GitHub Releases
 * 🚪 Quit AudioHarvester from the main window
 * 📦 Installable Debian package
@@ -92,7 +96,7 @@
 Download the latest release from the GitHub Releases page.
 
 ```bash
-sudo apt install ./audioharvester_1.5.8_all.deb
+sudo apt install ./audioharvester_1.5.9_all.deb
 ```
 
 Start AudioHarvester:
@@ -141,7 +145,7 @@ python3 src/main.py
 
 ## ⚙ Using AudioHarvester
 
-Paste one or more YouTube URLs into the URL box, with one link per line, then choose **Add to queue**. Select **Start queue** to process the links in order. Playlist links offer a choice between downloading the full playlist or only the selected track.
+Paste one or more YouTube URLs into the URL box, with one link per line, then choose **Add to queue**. Select **Start queue** to process the links in order. Playlist links offer the full playlist, the selected track, or a dialog for choosing individual tracks.
 
 Each queue entry shows whether it is waiting, downloading, complete, or failed. Use **Retry failed downloads** to requeue failed entries. The current URL and download progress are shown in the controls section. The log can be collapsed when it is not needed.
 
@@ -156,6 +160,8 @@ The **More** dropdown contains the About, legal information, and changelog dialo
 Choose **Check for updates** at the top of the window to check GitHub for a newer release. AudioHarvester shows the release notes and, when installed from the Debian package, can download and install the update. Installing it requires system authentication. You can also open the release page and install the package manually.
 
 Use **Quit** beside Settings to close AudioHarvester.
+
+**Keyboard shortcuts:** `Ctrl+Enter` starts the queue, and `Ctrl+L` focuses the URL field. Settings also lets you update yt-dlp and automatically remove completed queue entries.
 
 ---
 

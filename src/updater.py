@@ -8,6 +8,7 @@ import urllib.request
 from pathlib import Path
 
 from PyQt6.QtCore import QThread, pyqtSignal
+from yt_dlp_manager import get_yt_dlp_update_command, get_yt_dlp_version
 
 GITHUB_REPO = "wildcardcharacter/AudioHarvester"
 RELEASES_URL = f"https://github.com/{GITHUB_REPO}/releases/latest"
@@ -147,3 +148,41 @@ class PackageInstallWorker(QThread):
                     f"Update failed: {message}",
                 )
             self.failed.emit(message)
+
+
+class YtDlpUpdateWorker(QThread):
+    succeeded = pyqtSignal(str)
+    failed = pyqtSignal(str)
+
+    def __init__(self, language="Deutsch"):
+        super().__init__()
+        self.language = language
+
+    def run(self):
+        command = get_yt_dlp_update_command()
+        if not command:
+            self.failed.emit(
+                "Die Installationsart wird nicht unterstützt. Installiere yt-dlp am besten mit pipx."
+                if self.language != "English" else
+                "This installation method is not supported. Installing yt-dlp with pipx is recommended."
+            )
+            return
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=900, check=False)
+            if result.returncode:
+                detail = (result.stderr or result.stdout).strip().splitlines()
+                message = detail[-1] if detail else ("Update fehlgeschlagen" if self.language != "English" else "Update failed")
+                self.failed.emit(message)
+                return
+            from yt_dlp_manager import get_yt_dlp_version
+            version = get_yt_dlp_version() or ("unbekannt" if self.language != "English" else "unknown")
+            self.succeeded.emit(version)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            self.failed.emit(str(error))
+
+
+class YtDlpVersionWorker(QThread):
+    finished_version = pyqtSignal(str)
+
+    def run(self):
+        self.finished_version.emit(get_yt_dlp_version() or "")

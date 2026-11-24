@@ -6,14 +6,14 @@ from pathlib import Path
 from version import VERSION
 from about import show_info_dialog
 from changelog import show_changelog_dialog
-from download import DownloadWorker
+from download import DownloadWorker, PlaylistInfoWorker
 from legal import show_legal_dialog
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 ICON_FILE = PROJECT_DIR / "assets" / "icons" / "audioharvester.png"
 
 # Drittanbieter
-from PyQt6.QtGui import QIcon, QActionGroup, QDesktopServices
+from PyQt6.QtGui import QIcon, QActionGroup, QDesktopServices, QShortcut, QKeySequence
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer, QUrl, QProcess
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -37,11 +37,12 @@ from PyQt6.QtWidgets import (
     QScrollArea,
     QToolButton,
     QMenu,
+    QDialogButtonBox,
   )
 # Eigene Module
 from settings import load_settings, save_settings
 from updater import (
-    PackageInstallWorker, ReleaseCheckWorker, installed_deb_version, version_key,
+    PackageInstallWorker, ReleaseCheckWorker, YtDlpUpdateWorker, YtDlpVersionWorker, installed_deb_version, version_key,
 )
 
 QUEUE_URL_ROLE = int(Qt.ItemDataRole.UserRole)
@@ -123,6 +124,16 @@ class AudioHarvester(QWidget):
         self.embed_cover = self.settings.get("download_thumbnail", False)
         self.current_queue_item = None
         self.create_settings_menu()
+        self.ytdlp_version = None
+        self.ytdlp_version_action = self.settings_menu.addAction("")
+        self.ytdlp_version_action.setEnabled(False)
+        self.ytdlp_update_action = self.settings_menu.addAction("")
+        self.ytdlp_update_action.setEnabled(False)
+        self.ytdlp_update_action.triggered.connect(self.update_yt_dlp)
+        self.update_ytdlp_version_label()
+        self.ytdlp_version_worker = YtDlpVersionWorker()
+        self.ytdlp_version_worker.finished_version.connect(self.set_yt_dlp_version)
+        self.ytdlp_version_worker.start()
 
         folder_group = QGroupBox("Zielordner")
         folder_layout = QVBoxLayout()
@@ -216,7 +227,7 @@ class AudioHarvester(QWidget):
         button_layout.addWidget(self.download_button)
 
         self.download_button.setToolTip(
-            "Startet den Download der eingegebenen URL"
+            "Startet die Warteschlange (Strg+Enter)"
         )
 
         self.cancel_button = QPushButton("⏸ Abbrechen")
@@ -297,6 +308,9 @@ class AudioHarvester(QWidget):
         window_layout.setContentsMargins(0, 0, 0, 0)
         window_layout.addWidget(scroll_area)
         self.apply_language()
+        QShortcut(QKeySequence("Ctrl+Return"), self, activated=self.start_download)
+        QShortcut(QKeySequence("Ctrl+Enter"), self, activated=self.start_download)
+        QShortcut(QKeySequence("Ctrl+L"), self, activated=self.url_input.setFocus)
 
     def tr(self, german, english):
         return english if self.language == "English" else german
@@ -394,6 +408,10 @@ class AudioHarvester(QWidget):
         self.cover_action.setCheckable(True)
         self.cover_action.setChecked(self.embed_cover)
         self.cover_action.triggered.connect(self.set_cover_embedding)
+        self.auto_remove_action = self.settings_menu.addAction("")
+        self.auto_remove_action.setCheckable(True)
+        self.auto_remove_action.setChecked(bool(self.settings.get("auto_remove_completed", False)))
+        self.auto_remove_action.triggered.connect(self.set_auto_remove_completed)
         self.update_settings_menu_language()
         self.update_button.setText(self.tr("⬆ Updates prüfen", "⬆ Check for updates"))
 
@@ -418,6 +436,45 @@ class AudioHarvester(QWidget):
         self.format_menu.setTitle(self.tr("Format", "Format"))
         self.quality_menu.setTitle(self.tr("Qualität", "Quality"))
         self.cover_action.setText(self.tr("Coverbild einbetten", "Embed cover art"))
+        if hasattr(self, "auto_remove_action"):
+            self.auto_remove_action.setText(self.tr("Abgeschlossene automatisch entfernen", "Remove completed automatically"))
+        if hasattr(self, "ytdlp_version_action"):
+            self.update_ytdlp_version_label()
+
+    def set_auto_remove_completed(self, enabled):
+        self.settings["auto_remove_completed"] = enabled
+        save_settings(self.settings)
+
+    def update_ytdlp_version_label(self):
+        version = getattr(self, "ytdlp_version", None)
+        unknown = self.tr("wird ermittelt …", "checking …") if version is None else self.tr("nicht gefunden", "not found")
+        self.ytdlp_version_action.setText(self.tr(f"yt-dlp-Version: {version or unknown}", f"yt-dlp version: {version or unknown}"))
+        self.ytdlp_update_action.setText(self.tr("yt-dlp aktualisieren", "Update yt-dlp"))
+
+    def set_yt_dlp_version(self, version):
+        self.ytdlp_version = version or None
+        self.update_ytdlp_version_label()
+        self.ytdlp_update_action.setEnabled(bool(self.ytdlp_version))
+
+    def update_yt_dlp(self):
+        if not self.ytdlp_version:
+            QMessageBox.warning(self, "yt-dlp", self.tr("yt-dlp wurde nicht gefunden.", "yt-dlp was not found."))
+            return
+        self.ytdlp_update_action.setEnabled(False)
+        self.ytdlp_worker = YtDlpUpdateWorker(self.language)
+        self.ytdlp_worker.succeeded.connect(self.ytdlp_update_succeeded)
+        self.ytdlp_worker.failed.connect(self.ytdlp_update_failed)
+        self.ytdlp_worker.finished.connect(lambda: self.ytdlp_update_action.setEnabled(bool(self.ytdlp_version)))
+        self.ytdlp_worker.start()
+
+    def ytdlp_update_succeeded(self, version):
+        self.ytdlp_version = version
+        self.update_ytdlp_version_label()
+        self.ytdlp_update_action.setEnabled(True)
+        QMessageBox.information(self, "yt-dlp", self.tr(f"yt-dlp ist jetzt auf Version {version}.", f"yt-dlp is now version {version}."))
+
+    def ytdlp_update_failed(self, error):
+        QMessageBox.warning(self, self.tr("yt-dlp-Aktualisierung fehlgeschlagen", "yt-dlp update failed"), error)
 
     def check_for_updates(self):
         self.update_button.setEnabled(False)
@@ -641,6 +698,7 @@ class AudioHarvester(QWidget):
                 elif tip in translations.values():
                     widget.setToolTip(next(de for de, en in translations.items() if en == tip) if self.language == "Deutsch" else tip)
         self.url_input.setPlaceholderText(self.tr("Eine URL pro Zeile", "One URL per line"))
+        self.url_input.setToolTip(self.tr("Strg+L setzt den Fokus auf dieses Feld.", "Ctrl+L focuses this field."))
         self.more_button.setText(self.tr("Mehr ▾", "More ▾"))
         self.changelog_action.setText(self.tr("Changelog", "Changelog"))
         self.legal_action.setText(self.tr("Rechtliches", "Legal information"))
@@ -722,10 +780,10 @@ class AudioHarvester(QWidget):
             if not (hasattr(self, "worker") and self.worker.isRunning()):
                 self.start_download()
 
-    def start_download(self):
+    def start_download(self, playlist_items=None, selected_queue_item=None):
         if self.url_input.toPlainText().strip():
             self.add_to_queue()
-        queue_item = self.next_waiting_item()
+        queue_item = selected_queue_item or self.next_waiting_item()
         if queue_item is None:
             self.log.append(self.tr("Keine wartenden Downloads in der Warteschlange.", "There are no waiting downloads in the queue."))
             return
@@ -742,7 +800,7 @@ class AudioHarvester(QWidget):
         playlist_mode = "video"
         is_playlist = "list=" in url or "playlist" in url
 
-        if is_playlist:
+        if is_playlist and playlist_items is None:
             msg = QMessageBox(self)
 
             msg.setWindowTitle(self.tr("Playlist erkannt", "Playlist detected"))
@@ -757,6 +815,11 @@ class AudioHarvester(QWidget):
                 QMessageBox.ButtonRole.AcceptRole
             )
 
+            select_button = msg.addButton(
+                self.tr("Titel auswählen …", "Select tracks …"),
+                QMessageBox.ButtonRole.ActionRole
+            )
+
             msg.addButton(
                 self.tr("Nur diesen Titel", "This track only"),
                 QMessageBox.ButtonRole.RejectRole
@@ -767,9 +830,21 @@ class AudioHarvester(QWidget):
             if msg.clickedButton() == playlist_button:
                 playlist_mode = "playlist"
                 self.log.append(self.tr("Playlist-Modus: Ganze Playlist", "Playlist mode: entire playlist"))
+            elif msg.clickedButton() == select_button:
+                self.status_label.setText(self.tr("Lade Playlist …", "Loading playlist …"))
+                self.download_button.setEnabled(False)
+                self.start_queue_button.setEnabled(False)
+                self.add_queue_button.setEnabled(False)
+                self.playlist_info_worker = PlaylistInfoWorker(url, self.language)
+                self.playlist_info_worker.succeeded.connect(lambda entries, queued_item=queue_item: self.show_playlist_tracks(queued_item, entries))
+                self.playlist_info_worker.failed.connect(self.playlist_info_failed)
+                self.playlist_info_worker.start()
+                return
             else:
                 playlist_mode = "video"
                 self.log.append(self.tr("Playlist-Modus: Nur dieses Audio", "Playlist mode: this track only"))
+        elif playlist_items is not None:
+            playlist_mode = "playlist"
 
         self.progress.setValue(0)
         self.current_queue_item = queue_item
@@ -796,7 +871,8 @@ class AudioHarvester(QWidget):
             self.embed_cover,
             playlist_mode,
             self.filename_template.text().strip() or "%(title)s",
-            self.language
+            self.language,
+            playlist_items,
         )
 
         self.worker.log_message.connect(self.log.append)
@@ -807,6 +883,54 @@ class AudioHarvester(QWidget):
         self.status_label.setText(self.tr("⬇️ Download läuft...", "⬇️ Download in progress..."))
         
         self.worker.start()
+
+    def playlist_info_failed(self, error):
+        self.download_button.setEnabled(True)
+        self.start_queue_button.setEnabled(True)
+        self.add_queue_button.setEnabled(True)
+        self.status_label.setText(self.tr("Bereit", "Ready"))
+        QMessageBox.warning(self, self.tr("Playlist konnte nicht geladen werden", "Could not load playlist"), error)
+
+    def show_playlist_tracks(self, queue_item, entries):
+        self.download_button.setEnabled(True)
+        self.start_queue_button.setEnabled(True)
+        self.add_queue_button.setEnabled(True)
+        dialog = QDialog(self)
+        dialog.setWindowTitle(self.tr("Playlist-Titel auswählen", "Select playlist tracks"))
+        dialog.resize(600, 500)
+        layout = QVBoxLayout(dialog)
+        hint = QLabel(self.tr("Wähle die Titel aus, die heruntergeladen werden sollen.", "Choose the tracks to download."))
+        layout.addWidget(hint)
+        list_widget = QListWidget()
+        for entry in entries:
+            item = QListWidgetItem(f"{entry['index']}. {entry['title']}")
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked)
+            item.setData(Qt.ItemDataRole.UserRole, entry["index"])
+            list_widget.addItem(item)
+        layout.addWidget(list_widget, 1)
+        controls = QHBoxLayout()
+        select_all = QPushButton(self.tr("Alle auswählen", "Select all"))
+        select_none = QPushButton(self.tr("Keine auswählen", "Select none"))
+        select_all.clicked.connect(lambda: [list_widget.item(i).setCheckState(Qt.CheckState.Checked) for i in range(list_widget.count())])
+        select_none.clicked.connect(lambda: [list_widget.item(i).setCheckState(Qt.CheckState.Unchecked) for i in range(list_widget.count())])
+        controls.addWidget(select_all)
+        controls.addWidget(select_none)
+        controls.addStretch()
+        layout.addLayout(controls)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            self.status_label.setText(self.tr("Bereit", "Ready"))
+            return
+        selected = [list_widget.item(i).data(Qt.ItemDataRole.UserRole) for i in range(list_widget.count()) if list_widget.item(i).checkState() == Qt.CheckState.Checked]
+        if not selected:
+            QMessageBox.information(self, self.tr("Keine Titel ausgewählt", "No tracks selected"), self.tr("Wähle mindestens einen Titel aus.", "Select at least one track."))
+            self.status_label.setText(self.tr("Bereit", "Ready"))
+            return
+        self.start_download(selected, queue_item)
 
     def cancel_download(self):
         self.download_cancelled = True
@@ -844,6 +968,10 @@ class AudioHarvester(QWidget):
             self.progress.setValue(100)
             if item is not None:
                 self.set_queue_item_status(item, "success")
+                if self.settings.get("auto_remove_completed", False):
+                    row = self.queue_list.row(item)
+                    if row >= 0:
+                        self.queue_list.takeItem(row)
             self.current_download_label.setText(self.tr("Download abgeschlossen", "Download complete"))
 
             QTimer.singleShot(

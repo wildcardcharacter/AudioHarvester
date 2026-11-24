@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5.8-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.5.9-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-Linux-orange" alt="Plattform">
   <img src="https://img.shields.io/badge/Debian-13-A81D33?logo=debian" alt="Debian">
   <img src="https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white" alt="Python">
@@ -46,6 +46,7 @@
 * 📝 Metadaten automatisch übernehmen
 * 📃 Ganze Playlists herunterladen
 * 🎯 Einzelne Titel aus Playlists herunterladen
+* ☑ Gewünschte Titel einer Playlist vorab auswählen
 * 📥 Mehrere Downloads nacheinander in einer Warteschlange verarbeiten
 * 📊 Status pro Warteschlangeneintrag und erneuter Versuch fehlgeschlagener Downloads
 * 🔗 Mehrere URLs eingeben, eine pro Zeile
@@ -61,6 +62,9 @@
 * 📖 Integrierte Changelog-Anzeige
 * ⚖ Integrierte rechtliche Hinweise
 * 🔍 yt-dlp automatisch erkennen
+* ℹ Installierte yt-dlp-Version anzeigen und je nach Installationsart aktualisieren
+* ⌨ Tastenkürzel für Downloadstart und URL-Eingabe
+* 🧹 Abgeschlossene Warteschlangeneinträge optional automatisch entfernen
 * 🔄 Updates über GitHub Releases suchen und installieren
 * 🚪 AudioHarvester über das Hauptfenster beenden
 * 📦 Als Debian-Paket installierbar
@@ -92,7 +96,7 @@
 Lade die aktuelle Version von der [GitHub-Releases-Seite](https://github.com/wildcardcharacter/AudioHarvester/releases/latest) herunter.
 
 ```bash
-sudo apt install ./audioharvester_1.5.8_all.deb
+sudo apt install ./audioharvester_1.5.9_all.deb
 ```
 
 AudioHarvester starten:
@@ -141,7 +145,7 @@ python3 src/main.py
 
 ## ⚙ AudioHarvester verwenden
 
-Füge eine oder mehrere YouTube-URLs in das URL-Feld ein, jeweils eine pro Zeile. Wähle **Zur Warteschlange hinzufügen** und dann **Warteschlange starten**, um die Links nacheinander abzuarbeiten. Bei Playlist-Links kannst du wählen, ob die ganze Playlist oder nur der ausgewählte Titel heruntergeladen werden soll.
+Füge eine oder mehrere YouTube-URLs in das URL-Feld ein, jeweils eine pro Zeile. Wähle **Zur Warteschlange hinzufügen** und dann **Warteschlange starten**, um die Links nacheinander abzuarbeiten. Bei Playlist-Links kannst du die ganze Playlist, nur den ausgewählten Titel oder gezielt einzelne Playlist-Titel herunterladen.
 
 Jeder Eintrag zeigt an, ob er wartet, gerade heruntergeladen wird, abgeschlossen ist oder fehlgeschlagen ist. Mit **Fehlgeschlagene erneut versuchen** kannst du fehlgeschlagene Downloads erneut einreihen. Die aktuelle URL und der Fortschritt werden im Aktionsbereich angezeigt. Das Protokoll lässt sich bei Bedarf ein- und ausblenden.
 
@@ -156,6 +160,8 @@ Das Menü **Mehr** enthält die Dialoge für Informationen, Rechtliches und Chan
 Klicke oben im Fenster auf **Updates prüfen**, um auf GitHub nach einer neueren Version zu suchen. AudioHarvester zeigt die Versionshinweise an. Wenn das Programm als Debian-Paket installiert wurde, kann es das Update herunterladen und installieren. Dafür ist eine Systemauthentifizierung erforderlich. Alternativ kannst du die Release-Seite öffnen und das Paket manuell installieren.
 
 Mit **Beenden** neben den Einstellungen schließt du AudioHarvester.
+
+**Tastenkürzel:** `Strg+Enter` startet die Warteschlange, `Strg+L` fokussiert das URL-Feld. Unter **Einstellungen** kannst du yt-dlp aktualisieren und abgeschlossene Warteschlangeneinträge automatisch entfernen lassen.
 
 ---
 

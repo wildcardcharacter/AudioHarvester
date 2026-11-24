@@ -10,6 +10,7 @@ APP_DIR="packaging/deb/usr/share/audioharvester"
 
 echo "Preparing package files..."
 
+mkdir -p "$APP_DIR"
 cp src/main.py "$APP_DIR/"
 cp src/settings.py "$APP_DIR/"
 cp src/version.py "$APP_DIR/"
@@ -18,6 +19,7 @@ cp src/legal.py "$APP_DIR/"
 cp src/about.py "$APP_DIR/"
 cp src/changelog.py "$APP_DIR/"
 cp src/updater.py "$APP_DIR/"
+cp src/yt_dlp_manager.py "$APP_DIR/"
 cp CHANGELOG.md "$APP_DIR/"
 
 mkdir -p "$APP_DIR/assets/icons"

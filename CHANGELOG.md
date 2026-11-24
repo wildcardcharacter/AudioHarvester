@@ -2,6 +2,16 @@
 
 All notable changes to AudioHarvester are documented here.
 
+## 1.5.9
+
+### Playlist, yt-dlp and accessibility
+
+- Add selection of individual playlist tracks before downloading.
+- Show the installed yt-dlp version and provide an update action for supported installation methods.
+- Add keyboard shortcuts for starting the queue and focusing the URL field.
+- Add an option to automatically remove completed queue entries.
+- Update Debian packaging and documentation for the new features.
+
 ## 1.5.8
 
 ### Interface and translations

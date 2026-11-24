@@ -1,14 +1,47 @@
 import re
-import shutil
+import json
 import subprocess
 import sys
-import importlib.util
 from pathlib import Path
 
 from PyQt6.QtCore import (
     QThread,
     pyqtSignal
 )
+from yt_dlp_manager import find_yt_dlp
+
+
+class PlaylistInfoWorker(QThread):
+    succeeded = pyqtSignal(list)
+    failed = pyqtSignal(str)
+
+    def __init__(self, url, language="Deutsch"):
+        super().__init__()
+        self.url = url
+        self.language = language
+
+    def run(self):
+        command = find_yt_dlp()
+        if not command:
+            self.failed.emit("yt-dlp wurde nicht gefunden." if self.language != "English" else "yt-dlp was not found.")
+            return
+        try:
+            result = subprocess.run(command + ["--flat-playlist", "--dump-single-json", "--no-warnings", self.url], capture_output=True, text=True, timeout=120, check=False)
+            if result.returncode:
+                detail = (result.stderr or "").strip().splitlines()
+                self.failed.emit(detail[-1] if detail else ("Playlist konnte nicht geladen werden." if self.language != "English" else "Could not load the playlist."))
+                return
+            data = json.loads(result.stdout)
+            entries = []
+            for index, entry in enumerate(data.get("entries") or [], start=1):
+                if entry and entry.get("id"):
+                    entries.append({"index": index, "id": str(entry["id"]), "title": str(entry.get("title") or entry["id"])})
+            if not entries:
+                self.failed.emit("Die Playlist enthält keine auswählbaren Titel." if self.language != "English" else "The playlist has no selectable tracks.")
+                return
+            self.succeeded.emit(entries)
+        except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
+            self.failed.emit(str(error))
 
 
 class DownloadWorker(QThread):
@@ -17,7 +50,7 @@ class DownloadWorker(QThread):
     finished_download = pyqtSignal(int)
     status_changed = pyqtSignal(str)
 
-    def __init__(self, url, audio_format, quality, output_dir, thumbnail, playlist_mode, filename_template="%(title)s", language="Deutsch"):
+    def __init__(self, url, audio_format, quality, output_dir, thumbnail, playlist_mode, filename_template="%(title)s", language="Deutsch", playlist_items=None):
         super().__init__()
 
         self.url = url
@@ -28,6 +61,7 @@ class DownloadWorker(QThread):
         self.playlist_mode = playlist_mode
         self.filename_template = filename_template
         self.language = language
+        self.playlist_items = playlist_items
 
     def run(self):
         download_dir = Path(self.output_dir)
@@ -35,21 +69,7 @@ class DownloadWorker(QThread):
 
         # Desktop launchers often provide a smaller PATH than a terminal. Check
         # the usual per-user install locations explicitly before giving up.
-        home = Path.home()
-        candidates = [
-            home / ".local" / "bin" / "yt-dlp",
-            home / ".local" / "share" / "pipx" / "venvs" / "yt-dlp" / "bin" / "yt-dlp",
-            home / ".local" / "pipx" / "venvs" / "yt-dlp" / "bin" / "yt-dlp",
-            Path("/usr/local/bin/yt-dlp"),
-            Path("/usr/bin/yt-dlp"),
-        ]
-        yt_dlp = next((str(path) for path in candidates if path.is_file()), None)
-        yt_dlp = yt_dlp or shutil.which("yt-dlp")
-
-        # Also support installations available to the Python environment that
-        # launched the GUI, even when their console script is outside PATH.
-        if not yt_dlp and importlib.util.find_spec("yt_dlp") is not None:
-            yt_dlp = [sys.executable, "-m", "yt_dlp"]
+        yt_dlp = find_yt_dlp()
 
         if not yt_dlp:
             self.log_message.emit(
@@ -61,7 +81,7 @@ class DownloadWorker(QThread):
             return
 
         cmd = [
-            *([yt_dlp] if isinstance(yt_dlp, str) else yt_dlp),
+            *yt_dlp,
             "-x",
             "--newline",
             "-o",
@@ -94,6 +114,8 @@ class DownloadWorker(QThread):
 
         if self.playlist_mode == "playlist":
             cmd.append("--yes-playlist")
+            if self.playlist_items:
+                cmd += ["--playlist-items", ",".join(str(item) for item in self.playlist_items)]
         else:
             cmd.append("--no-playlist")
 
