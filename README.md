@@ -32,7 +32,7 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="assets/img/deu_main-window.png" width="600" alt="AudioHarvester Hauptfenster auf Deutsch">
+  <img src="assets/img/eng_main-window.png" width="600" alt="AudioHarvester main window in English">
 </p>
 
 ---
